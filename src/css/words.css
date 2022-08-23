@@ -1,0 +1,16 @@
+.TypeTextWordWrapper {
+  display: flex;
+}
+
+.word {
+  display: flex;
+  margin-right: 0.5rem;
+}
+
+.red {
+  color: red;
+}
+
+.green {
+  color: green;
+}
