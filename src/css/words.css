@@ -14,3 +14,7 @@
 .green {
   color: green;
 }
+
+.out-of-bnds {
+  color: rgb(88, 3, 3);
+}

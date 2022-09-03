@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useReducer } from "react"
 
 export default function useKey(key, cb) {
   const callbackRef = useRef(cb)
