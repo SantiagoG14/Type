@@ -1,8 +1,8 @@
-import { useEffect, useReducer } from "react"
-import { v4 as uuidv4 } from "uuid"
+import { useEffect, useReducer, useRef, useLayoutEffect, useState } from "react"
+import Caret from "./Caret"
 import TypeWord from "./TypeWord"
 
-const ACTIONS = {
+export const ACTIONS = {
   MOVE_NEXT_LETTER: "move-next-letter",
   MOVE_NEXT_WORD: "move-next-word",
   MOVE_PREV_LETTER: "move-prev-letter",
@@ -17,13 +17,11 @@ export const FEEDBACK = {
 }
 
 export default function TypeText({ text }) {
-  // const [currentWordPosition, setCurrentWordPosition] = useState(0)
-  // const [currentLetterPosition, setCurrentLetterPosition] = useState(0)
+  const currentWordRef = useRef()
+  const caretRef = useRef()
+  const [caretLeft, setCaretLeft] = useState(0)
   const [state, dispatch] = useReducer(
     reducer,
-    // getWordsArray(text).map((word) =>
-    //   getLettersArray(word, FEEDBACK.NOT_PRESSED)
-    // )
     new State(
       getWordsArray(text).map((word) =>
         getLettersArray(word, FEEDBACK.NOT_PRESSED)
@@ -36,69 +34,15 @@ export default function TypeText({ text }) {
   function reducer(state, action) {
     switch (action.type) {
       case ACTIONS.MOVE_NEXT_LETTER:
-        // if (currentLetterPosition >= 24) {
-        //   return typeText
-        // } else {
-        //   setCurrentLetterPosition(
-        //     (prevLetterPosition) => prevLetterPosition + 1
-        //   )
-        //   return updateOnMoveForward(action.payload.key, typeText)
-        // }
         return Algebra.next(action.payload.key, state)
       case ACTIONS.MOVE_PREV_LETTER:
-        // if (currentLetterPosition === 0) return typeText
-        // setCurrentLetterPosition((prev) => prev - 1)
-        // return updateOnMoveBackward(typeText)
         return Algebra.back(state)
+      case ACTIONS.MOVE_NEXT_WORD:
+        return Algebra.space(state)
       default:
         return state
     }
   }
-  // function updateOnMoveForward(key, typeText) {
-  //   if (currentLetterPosition >= typeText[currentWordPosition].length) {
-  //     return typeText[currentWordPosition].push({
-  //       letter: key,
-  //       feedback: FEEDBACK.OUT_OF_BND,
-  //     })
-  //   }
-  //   return typeText.map((word, i) => {
-  //     return word.map((obj, j) => {
-  //       return i === currentWordPosition &&
-  //         j === currentLetterPosition &&
-  //         obj.feedback !== FEEDBACK.OUT_OF_BND
-  //         ? {
-  //             feedback:
-  //               obj.letter === key ? FEEDBACK.CORRECT : FEEDBACK.INCORRECT,
-  //             letter: obj.letter,
-  //           }
-  //         : obj
-  //     })
-  //   })
-  // }
-
-  // function updateOnMoveBackward(typeText) {
-  //   const prevLetterPosition = currentLetterPosition + 1
-  //   if (prevLetterPosition > typeText[currentWordPosition].length) {
-  //     return typeText.map((wordArr, i) => {
-  //       if (i === currentWordPosition) {
-  //         return wordArr.filter((_, j) => j !== wordArr.length - 1)
-  //       }
-  //       return wordArr
-  //     })
-  //   }
-  //   return typeText.map((word, i) => {
-  //     return word.map((obj, j) => {
-  //       return i === currentWordPosition &&
-  //         j === prevLetterPosition &&
-  //         obj.feedback !== FEEDBACK.OUT_OF_BND
-  //         ? {
-  //             feedback: FEEDBACK.NOT_PRESSED,
-  //             letter: obj.letter,
-  //           }
-  //         : obj
-  //     })
-  //   })
-  // }
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
@@ -107,6 +51,18 @@ export default function TypeText({ text }) {
       window.removeEventListener("keydown", handleKeydown)
     }
   })
+
+  useLayoutEffect(() => {
+    if (state.clp - 1 < 0) {
+      const curLetterNode = currentWordRef.current.children[0]
+      const rect = curLetterNode.getBoundingClientRect()
+      setCaretLeft(rect.left - 101.5)
+    } else {
+      const curLetterNode = currentWordRef.current.children[state.clp - 1]
+      const rect = curLetterNode.getBoundingClientRect()
+      setCaretLeft(rect.right - 101.5)
+    }
+  }, [state.clp, state.cwp])
 
   const handleKeydown = (e) => {
     if (e.key.length === 1 && e.key !== " ") {
@@ -119,14 +75,24 @@ export default function TypeText({ text }) {
       })
     } else if (e.key === "Backspace") {
       dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
+    } else if (e.key === " ") {
+      dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
     }
   }
   return (
-    <div className="TypeTextWordWrapper">
-      {Array.isArray(state.tt)
-        ? state.tt.map((word) => <TypeWord word={word} />)
-        : null}
-    </div>
+    <>
+      <div className="TypeTextWordWrapper">
+        {state.tt.map((word, i) =>
+          i === state.cwp ? (
+            <TypeWord word={word} currentWordRef={currentWordRef} />
+          ) : (
+            <TypeWord word={word} />
+          )
+        )}
+      </div>
+
+      <Caret caretRef={caretRef} curLeft={caretLeft} />
+    </>
   )
 }
 
@@ -156,6 +122,11 @@ class State {
     )
   }
 
+  get prevIsPerfect() {
+    return this.cwp - 1 < 0
+      ? false
+      : this.tt[this.cwp - 1].every((obj) => obj.feedback === FEEDBACK.CORRECT)
+  }
   replaceCur(f) {
     return this.tt.map((word, i) => {
       return word.map((obj, j) => {
@@ -209,7 +180,21 @@ class Algebra {
   }
 
   static back(s) {
-    if (s.clp === 0) return s
+    if (s.clp === 0 && s.cwp === 0) return s
+
+    if (s.clp === 0 && s.cwp > 0) {
+      return s.prevIsPerfect
+        ? s
+        : new State(
+            s.tt,
+            s.cwp - 1,
+            s.tt[s.cwp - 1].length -
+              s.tt[s.cwp - 1].filter(
+                (obj) => obj.feedback === FEEDBACK.NOT_PRESSED
+              ).length
+          )
+    }
+
     //inboud
     if (
       s.inbound ||
@@ -226,11 +211,15 @@ class Algebra {
     }
 
     //outbound
-    console.log("happened")
     const newtt = s.removePrev()
     return new State(newtt, s.cwp, s.clp - 1)
   }
-  static space(s) {}
+  static space(s) {
+    if (s.clp > 0) {
+      return new State(s.tt, s.cwp + 1, 0)
+    }
+    return s
+  }
 }
 
 function getWordsArray(strText) {
@@ -244,10 +233,4 @@ function getLettersArray(strWord, feedback) {
       feedback: feedback,
     }
   })
-}
-
-function getWordFromArray(wordArr) {
-  let word = ""
-  wordArr.forEach((letterObj) => (word += letterObj.letter))
-  return word
 }

@@ -1,12 +1,11 @@
 import TypeText from "./components/TypeText"
-import ReducerTest from "./components/ReducerTest"
-import Carrot from "./components/Carrot"
+import Test from "./components/Test"
 function App() {
   return (
     <div className="App">
       <TypeText text="Hello how are you today because" />
-      {/* <ReducerTest /> */}
-      {/* <Carrot text="hello" /> */}
+      {/* <Test /> */}
+      {/* <Carrot top={0} left={0} /> */}
     </div>
   )
 }

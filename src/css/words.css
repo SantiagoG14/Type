@@ -1,3 +1,16 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.App {
+  position: relative;
+  margin-left: 100px;
+}
+
 .TypeTextWordWrapper {
   display: flex;
 }
@@ -17,4 +30,32 @@
 
 .out-of-bnds {
   color: rgb(88, 3, 3);
+}
+
+.caret {
+  height: 18px;
+  width: min-content;
+  width: 0.25rem;
+  background-image: url("../../public/carrot.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  animation-fill-mode: forwards;
+}
+
+/* .transition-move-forward {
+  transition: left 200ms ease 0ms;
+}
+
+.transition-move-backward {
+  transition: left 110ms ease 0ms;
+} */
+.sq {
+  position: absolute;
+  width: 0.2rem;
+  background-color: blue;
+  height: 1.4rem;
+  animation-fill-mode: forwards;
 }

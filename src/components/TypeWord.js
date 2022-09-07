@@ -1,10 +1,9 @@
 import React from "react"
 import TypeLetter from "./TypeLetter"
-import { v4 as uuidv4 } from "uuid"
 
-export default function TypeWord({ word }) {
+export default function TypeWord({ word, currentWordRef }) {
   return (
-    <div className="word">
+    <div className="word" ref={currentWordRef}>
       {word.map((letter) => (
         <TypeLetter letter={letter} />
       ))}
