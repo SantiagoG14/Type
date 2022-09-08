@@ -1,6 +1,5 @@
-import { useEffect, useReducer, useRef, useLayoutEffect, useState } from "react"
-import Caret from "./Caret"
-import TypeWord from "./TypeWord"
+import { useReducer } from "react"
+import getRandomWordList from "../utils/wordGenerator"
 
 export const ACTIONS = {
   MOVE_NEXT_LETTER: "move-next-letter",
@@ -16,84 +15,26 @@ export const FEEDBACK = {
   OUT_OF_BND: "letter-out-of-bounds",
 }
 
-export default function TypeText({ text }) {
-  const currentWordRef = useRef()
-  const caretRef = useRef()
-  const [caretLeft, setCaretLeft] = useState(0)
+function reducer(state, action) {
+  switch (action.type) {
+    case ACTIONS.MOVE_NEXT_LETTER:
+      return Algebra.next(action.payload.key, state)
+    case ACTIONS.MOVE_PREV_LETTER:
+      return Algebra.back(state)
+    case ACTIONS.MOVE_NEXT_WORD:
+      return Algebra.space(state)
+    default:
+      return state
+  }
+}
+
+export default function useTypeText() {
   const [state, dispatch] = useReducer(
     reducer,
-    new State(
-      getWordsArray(text).map((word) =>
-        getLettersArray(word, FEEDBACK.NOT_PRESSED)
-      ),
-      0,
-      0
-    )
+    new State(getRandomWordList(50), 0, 0)
   )
 
-  function reducer(state, action) {
-    switch (action.type) {
-      case ACTIONS.MOVE_NEXT_LETTER:
-        return Algebra.next(action.payload.key, state)
-      case ACTIONS.MOVE_PREV_LETTER:
-        return Algebra.back(state)
-      case ACTIONS.MOVE_NEXT_WORD:
-        return Algebra.space(state)
-      default:
-        return state
-    }
-  }
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeydown)
-
-    return () => {
-      window.removeEventListener("keydown", handleKeydown)
-    }
-  })
-
-  useLayoutEffect(() => {
-    if (state.clp - 1 < 0) {
-      const curLetterNode = currentWordRef.current.children[0]
-      const rect = curLetterNode.getBoundingClientRect()
-      setCaretLeft(rect.left - 101.5)
-    } else {
-      const curLetterNode = currentWordRef.current.children[state.clp - 1]
-      const rect = curLetterNode.getBoundingClientRect()
-      setCaretLeft(rect.right - 101.5)
-    }
-  }, [state.clp, state.cwp])
-
-  const handleKeydown = (e) => {
-    if (e.key.length === 1 && e.key !== " ") {
-      dispatch({
-        type: ACTIONS.MOVE_NEXT_LETTER,
-        payload: {
-          word: state.currentWordStr,
-          key: e.key,
-        },
-      })
-    } else if (e.key === "Backspace") {
-      dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
-    } else if (e.key === " ") {
-      dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
-    }
-  }
-  return (
-    <>
-      <div className="TypeTextWordWrapper">
-        {state.tt.map((word, i) =>
-          i === state.cwp ? (
-            <TypeWord word={word} currentWordRef={currentWordRef} />
-          ) : (
-            <TypeWord word={word} />
-          )
-        )}
-      </div>
-
-      <Caret caretRef={caretRef} curLeft={caretLeft} />
-    </>
-  )
+  return [state, dispatch]
 }
 
 class State {
@@ -220,17 +161,4 @@ class Algebra {
     }
     return s
   }
-}
-
-function getWordsArray(strText) {
-  return strText.split(" ")
-}
-
-function getLettersArray(strWord, feedback) {
-  return strWord.split("").map((l) => {
-    return {
-      letter: l,
-      feedback: feedback,
-    }
-  })
 }

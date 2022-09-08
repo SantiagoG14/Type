@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap");
+
 *,
 *::before,
 *::after {
@@ -7,17 +9,38 @@
 }
 
 .App {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.testWrapper {
   position: relative;
-  margin-left: 100px;
+  /* margin-left: 100px; */
+  width: 58rem;
+  max-width: 58rem;
+  position: relative;
+  height: fit-content;
+  /* margin: auto; */
 }
 
 .TypeTextWordWrapper {
   display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  position: absolute;
+  transition: top 200ms ease;
+  /* height: 100%; */
+  overflow: hidden;
 }
 
 .word {
   display: flex;
   margin-right: 0.5rem;
+  font-size: 1.5rem;
+  font-family: "Atkinson Hyperlegible", sans-serif;
 }
 
 .red {
@@ -33,25 +56,17 @@
 }
 
 .caret {
-  height: 18px;
-  width: min-content;
-  width: 0.25rem;
+  height: 2rem;
+  width: 0.5rem;
   background-image: url("../../public/carrot.png");
   background-repeat: no-repeat;
   background-size: contain;
-  object-fit: cover;
   position: absolute;
+  z-index: 1;
   top: 0;
-  animation-fill-mode: forwards;
+  left: 0;
 }
 
-/* .transition-move-forward {
-  transition: left 200ms ease 0ms;
-}
-
-.transition-move-backward {
-  transition: left 110ms ease 0ms;
-} */
 .sq {
   position: absolute;
   width: 0.2rem;

@@ -1,5 +1,5 @@
 import React from "react"
-import { FEEDBACK } from "./TypeText"
+import { FEEDBACK } from "../../hooks/useTypeText"
 
 export default function TypeLetter({ letter }) {
   return (
