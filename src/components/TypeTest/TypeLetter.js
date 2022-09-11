@@ -1,20 +1,22 @@
 import React from "react"
 import { FEEDBACK } from "../../hooks/useTypeText"
+import styled from "styled-components"
 
 export default function TypeLetter({ letter }) {
   return (
-    <div
-      className={
-        letter.feedback === FEEDBACK.CORRECT
-          ? "letter green"
-          : letter.feedback === FEEDBACK.INCORRECT
-          ? "letter red"
-          : letter.feedback === FEEDBACK.OUT_OF_BND
-          ? "letter out-of-bnds"
-          : "letter"
-      }
-    >
+    <StyledTypeLetter feedback={letter.feedback}>
       {letter.letter}
-    </div>
+    </StyledTypeLetter>
   )
 }
+
+export const StyledTypeLetter = styled.div`
+  color: ${({ feedback, theme }) =>
+    feedback === FEEDBACK.CORRECT
+      ? theme.colors.correct
+      : feedback === FEEDBACK.INCORRECT
+      ? theme.colors.incorrect
+      : feedback === FEEDBACK.OUT_OF_BND
+      ? theme.colors.incorrect
+      : theme.colors.notPressed};
+`

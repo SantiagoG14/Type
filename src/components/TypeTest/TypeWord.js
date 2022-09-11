@@ -1,12 +1,20 @@
 import React from "react"
+import styled from "styled-components"
 import TypeLetter from "./TypeLetter"
 
 export default function TypeWord({ word, currentWordRef }) {
   return (
-    <div className="word" ref={currentWordRef}>
+    <StyledTypeWord ref={currentWordRef}>
       {word.map((letter) => (
         <TypeLetter letter={letter} />
       ))}
-    </div>
+    </StyledTypeWord>
   )
 }
+
+const StyledTypeWord = styled.div`
+  display: flex;
+  margin: 6px;
+  font-size: 1.5rem;
+  font-family: ${({ theme }) => theme.font.primary}, sans-serif;
+`

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap");
+/* @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap");
 
 *,
 *::before,
@@ -6,7 +6,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
+} */
 
 .App {
   width: 100vw;
@@ -18,41 +18,29 @@
 
 .testWrapper {
   position: relative;
-  /* margin-left: 100px; */
   width: 58rem;
   max-width: 58rem;
   position: relative;
   height: fit-content;
-  /* margin: auto; */
 }
 
 .TypeTextWordWrapper {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-  position: absolute;
+  /* position: absolute; */
   transition: top 200ms ease;
-  /* height: 100%; */
   overflow: hidden;
+  cursor: default;
+  pointer-events: none;
 }
 
 .word {
   display: flex;
-  margin-right: 0.5rem;
+  margin: 6px;
   font-size: 1.5rem;
   font-family: "Atkinson Hyperlegible", sans-serif;
-}
-
-.red {
-  color: red;
-}
-
-.green {
-  color: green;
-}
-
-.out-of-bnds {
-  color: rgb(88, 3, 3);
+  /* color: #b7b7b7; */
 }
 
 .caret {

@@ -2,19 +2,23 @@ import { useEffect, useRef, useLayoutEffect, useState } from "react"
 import useTypeText, { ACTIONS } from "../../hooks/useTypeText"
 import Caret from "./Caret"
 import TypeWord from "./TypeWord"
+import styled from "styled-components"
+import RestartButton from "./RestartButton"
+// import { motion } from "framer-motion"
 
 export default function TypeText() {
   const currentWordRef = useRef()
   const caretRef = useRef()
   const testWrapperRef = useRef()
+  const restartButtonRef = useRef()
+  const [restartButtonFocus, setRestartButtonFocus] = useState(false)
   const [wordTop, setWordTop] = useState(0)
-  const [caretLeft, setCaretLeft] = useState()
+  const [caretLeft, setCaretLeft] = useState(0)
   const [caretTop, setCaretTop] = useState(0)
   const [state, dispatch] = useTypeText()
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
-
     return () => {
       window.removeEventListener("keydown", handleKeydown)
     }
@@ -64,6 +68,12 @@ export default function TypeText() {
     }
   }, [caretTop])
 
+  useLayoutEffect(() => {
+    restartButtonFocus === true
+      ? restartButtonRef.current.focus()
+      : restartButtonRef.current.blur()
+  }, [restartButtonFocus])
+
   const handleKeydown = (e) => {
     if (e.key.length === 1 && e.key !== " ") {
       dispatch({
@@ -76,22 +86,69 @@ export default function TypeText() {
     } else if (e.key === "Backspace") {
       dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
     } else if (e.key === " ") {
+      if (restartButtonFocus) {
+        e.preventDefault()
+        setRestartButtonFocus(false)
+      }
       dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
+    } else if (e.key === "Tab") {
+      e.preventDefault()
+      setRestartButtonFocus(true)
     }
   }
+
+  const handleRestartTest = () => {
+    dispatch({ type: ACTIONS.RESTART_TEST })
+    setRestartButtonFocus(false)
+  }
+
   return (
-    <div className="testWrapper" ref={testWrapperRef}>
-      <div className="TypeTextWordWrapper" style={{ top: `${wordTop}px` }}>
-        {state.tt.map((word, i) =>
-          i === state.cwp ? (
-            <TypeWord word={word} currentWordRef={currentWordRef} />
-          ) : (
-            <TypeWord word={word} />
-          )
-        )}
+    <StyledWrapper>
+      <div className="testWrapper" ref={testWrapperRef}>
+        <div className="TypeTextWordWrapper" style={{ top: `${wordTop}px` }}>
+          {state.tt.map((word, i) =>
+            i === state.cwp ? (
+              <TypeWord word={word} currentWordRef={currentWordRef} />
+            ) : (
+              <TypeWord word={word} />
+            )
+          )}
+        </div>
+
+        <Caret
+          caretRef={caretRef}
+          curLeft={caretLeft}
+          curTop={caretTop}
+          restartbuttonfocus={restartButtonFocus.toString()}
+        />
       </div>
 
-      <Caret caretRef={caretRef} curLeft={caretLeft} curTop={caretTop} />
-    </div>
+      <RestartButton
+        handleRestartTest={handleRestartTest}
+        restartButtonRef={restartButtonRef}
+        setRestartButtonFocus={setRestartButtonFocus}
+      />
+    </StyledWrapper>
   )
 }
+
+const StyledWrapper = styled.div`
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  @keyframes disappear {
+    0% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+`

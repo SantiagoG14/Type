@@ -6,6 +6,7 @@ export const ACTIONS = {
   MOVE_NEXT_WORD: "move-next-word",
   MOVE_PREV_LETTER: "move-prev-letter",
   MOVE_PREV_WORD: "move-prev-word",
+  RESTART_TEST: "restart-test",
 }
 
 export const FEEDBACK = {
@@ -23,6 +24,8 @@ function reducer(state, action) {
       return Algebra.back(state)
     case ACTIONS.MOVE_NEXT_WORD:
       return Algebra.space(state)
+    case ACTIONS.RESTART_TEST:
+      return new State(getRandomWordList(50), 0, 0)
     default:
       return state
   }
