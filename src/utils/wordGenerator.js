@@ -1,8 +1,8 @@
 import { FEEDBACK } from "../hooks/useTypeText"
 
-function getRandomWord() {
+export function getRandomWord() {
   const randomIndex = Math.floor(Math.random() * mostCommon200.length)
-  return mostCommon200[randomIndex]
+  return getLettersArray(mostCommon200[randomIndex], FEEDBACK.NOT_PRESSED)
 }
 
 function getLettersArray(strWord, feedback) {
@@ -16,7 +16,7 @@ function getLettersArray(strWord, feedback) {
 
 export default function getRandomWordList(length) {
   const newArray = Array.apply(null, Array(length)).map((_) => getRandomWord())
-  return newArray.map((word) => getLettersArray(word, FEEDBACK.NOT_PRESSED))
+  return newArray
 }
 
 export const mostCommon200 =

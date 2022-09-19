@@ -14,7 +14,9 @@ export default function TypeWord({ word, currentWordRef }) {
 
 const StyledTypeWord = styled.div`
   display: flex;
-  margin: 6px;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+  /* margin-top: 6px; */
   font-size: 1.5rem;
   font-family: ${({ theme }) => theme.font.primary}, sans-serif;
 `

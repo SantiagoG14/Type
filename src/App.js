@@ -1,9 +1,7 @@
 import TypeText from "./components/TypeTest/TypeText"
-import { Container } from "./components/Container.styled"
-import Header from "./components/Header"
 import { ThemeProvider } from "styled-components"
-import { GlobalStyles } from "./components/Global"
-import { mostCommon200 } from "./utils/wordGenerator"
+import { GlobalStyles } from "./components/GlobalStyles"
+import { useCountDown } from "./hooks/useCountdown"
 
 const theme = {
   colors: {
@@ -19,21 +17,21 @@ const theme = {
 }
 
 function App() {
+  // const [timer, newTimer, clearNewTimer] = useCountDown()
+  // const [total, hours, minutes, seconds] = timer
   return (
     <div className="App">
       <ThemeProvider theme={theme}>
         <GlobalStyles />
         <TypeText />
+        {/* <h2>{seconds}</h2>
+        <button onClick={() => newTimer(10)}>35 seconds</button>
+        <button onClick={() => newTimer(0)}>resetTimer</button>
+        <button onClick={() => clearNewTimer(10)}>start</button>
+
+        <div>{total === 0 ? "test over" : "test going"}</div> */}
       </ThemeProvider>
     </div>
-    // <ThemeProvider theme={theme}>
-    //   <>
-    //     <Header />
-    //     <Container>
-    //       <h1>Hello World</h1>
-    //     </Container>
-    //   </>
-    // </ThemeProvider>
   )
 }
 

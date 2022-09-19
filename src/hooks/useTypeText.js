@@ -1,5 +1,6 @@
 import { useReducer } from "react"
 import getRandomWordList from "../utils/wordGenerator"
+import { useCountDown } from "./useCountdown"
 
 export const ACTIONS = {
   MOVE_NEXT_LETTER: "move-next-letter",
@@ -7,6 +8,7 @@ export const ACTIONS = {
   MOVE_PREV_LETTER: "move-prev-letter",
   MOVE_PREV_WORD: "move-prev-word",
   RESTART_TEST: "restart-test",
+  SET_TEST_CONFIG: "set-test-config",
 }
 
 export const FEEDBACK = {
@@ -25,30 +27,54 @@ function reducer(state, action) {
     case ACTIONS.MOVE_NEXT_WORD:
       return Algebra.space(state)
     case ACTIONS.RESTART_TEST:
-      return new State(getRandomWordList(50), 0, 0)
+      return Algebra.restart(state)
+    case ACTIONS.SET_TEST_CONFIG:
+      return Algebra.setConfig(action.payload.testConfig)
     default:
       return state
   }
 }
 
 export default function useTypeText() {
+  // const [time, newTimer] = useCountDown()
+  const initialTestConfig = {
+    type: "words",
+    length: 25,
+  }
   const [state, dispatch] = useReducer(
     reducer,
-    new State(getRandomWordList(50), 0, 0)
+    new State(
+      getRandomWordList(initialTestConfig.length),
+      0,
+      0,
+      initialTestConfig,
+      useCountDown()
+    )
   )
 
   return [state, dispatch]
 }
 
 class State {
-  constructor(tt, cwp, clp) {
+  // tt = type text
+  // cwp = current word position
+  // clp = current letter position
+  // tc = test config
+
+  constructor(tt, cwp, clp, tc, timer) {
     this.tt = tt
     this.cwp = cwp
     this.clp = clp
+    this.tc = tc
+    this.timer = timer
   }
 
   get currentWord() {
     return this.tt[this.cwp]
+  }
+
+  get testStarted() {
+    return this.clp > 1 || this.cwp > 1
   }
 
   get currentWordStr() {
@@ -56,6 +82,14 @@ class State {
     let word = ""
     wordArr.forEach((letterObj) => (word += letterObj.letter))
     return word
+  }
+
+  get uncorrectedErrors() {
+    return this.tt.filter(
+      (word) =>
+        word.feedback === FEEDBACK.INCORRECT ||
+        word.feedback === FEEDBACK.OUT_OF_BND
+    )
   }
 
   get inbound() {
@@ -104,7 +138,7 @@ class Algebra {
           letter: obj.letter,
         }
       })
-      return new State(newtt, s.cwp, s.clp + 1)
+      return new State(newtt, s.cwp, s.clp + 1, s.tc)
     }
     // outbound
     if (s.tt[s.cwp].length === 24) return s
@@ -120,7 +154,7 @@ class Algebra {
       }
       return wordArr
     })
-    return new State(newtt, s.cwp, s.clp + 1)
+    return new State(newtt, s.cwp, s.clp + 1, s.tc)
   }
 
   static back(s) {
@@ -135,7 +169,8 @@ class Algebra {
             s.tt[s.cwp - 1].length -
               s.tt[s.cwp - 1].filter(
                 (obj) => obj.feedback === FEEDBACK.NOT_PRESSED
-              ).length
+              ).length,
+            s.tc
           )
     }
 
@@ -151,17 +186,25 @@ class Algebra {
           letter: obj.letter,
         }
       })
-      return new State(newtt, s.cwp, s.clp - 1)
+      return new State(newtt, s.cwp, s.clp - 1, s.tc)
     }
 
     //outbound
     const newtt = s.removePrev()
-    return new State(newtt, s.cwp, s.clp - 1)
+    return new State(newtt, s.cwp, s.clp - 1, s.tc)
   }
   static space(s) {
-    if (s.clp > 0) {
-      return new State(s.tt, s.cwp + 1, 0)
+    if (s.clp > 0 && s.cwp < s.tt.length) {
+      return new State(s.tt, s.cwp + 1, 0, s.tc)
     }
     return s
+  }
+
+  static restart(s) {
+    return new State(getRandomWordList(s.tc.length), 0, 0, s.tc)
+  }
+
+  static setConfig(tc) {
+    return new State(getRandomWordList(tc.length), 0, 0, tc)
   }
 }
