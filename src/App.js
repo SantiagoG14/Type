@@ -30,6 +30,7 @@ function App() {
         <button onClick={() => clearNewTimer(10)}>start</button>
 
         <div>{total === 0 ? "test over" : "test going"}</div> */}
+        <h1>this is a test</h1>
       </ThemeProvider>
     </div>
   )
