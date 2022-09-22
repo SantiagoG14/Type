@@ -19,7 +19,7 @@ export default function RestartButton({
   )
 }
 
-const StyledButton = styled.button`
+export const StyledButton = styled.button`
   background: none;
   border: none;
   border-radius: 0.5rem;

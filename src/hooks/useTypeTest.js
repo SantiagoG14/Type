@@ -1,4 +1,4 @@
-import { useReducer, useLayoutEffect, useRef } from "react"
+import { useReducer, useLayoutEffect, useRef, useState, useEffect } from "react"
 import getRandomWordList, { getRandomWord } from "../utils/wordGenerator"
 
 export const ACTIONS = {
@@ -51,7 +51,8 @@ function reducer(state, action) {
 
 export default function useTypeTest() {
   const Ref = useRef(null)
-
+  const testTimingRef = useRef(null)
+  const [testTime, setTestTiming] = useState(0)
   const initialTestConfig = {
     mode: MODES.WORDS,
     length: 25,
@@ -68,9 +69,10 @@ export default function useTypeTest() {
     clp: 0,
     tc: initialTestConfig,
     timer: [],
+    timing: 0,
   })
 
-  const [total, hours, minutes, seconds] = state.timer
+  const [total] = state.timer
 
   //update timer
 
@@ -117,6 +119,20 @@ export default function useTypeTest() {
     Ref.current = id
   }
 
+  const startTestTiming = () => {
+    if (testTimingRef.current) clearInterval(testTimingRef.current)
+    const id = setInterval(() => {
+      setTestTiming((prev) => prev + 1)
+    }, 1000)
+
+    testTimingRef.current = id
+  }
+
+  const endTestTiming = () => {
+    clearInterval(testTimingRef.current)
+    setTestTiming(0)
+  }
+
   const getDeadTime = (seconds = 60) => {
     let deadline = new Date()
     deadline.setSeconds(deadline.getSeconds() + seconds)
@@ -128,10 +144,28 @@ export default function useTypeTest() {
     startTimer(getDeadTime(length))
   }
 
+  useEffect(() => {
+    let mounted = true
+
+    if (mounted) {
+      if (testTime === 15) {
+        endTestTiming()
+      }
+    }
+  }, [testTime])
+
   useLayoutEffect(() => {
-    if (state.cwp === 0 && state.clp === 1) {
-      if (total < state.tc.length * 1000) return
-      clearTimer(getDeadTime(state.tc.length))
+    let mounted = true
+
+    if (mounted) {
+      if (state.cwp === 0 && state.clp === 1 && state.tc.mode === MODES.TIME) {
+        if (total < state.tc.length * 1000) return
+        clearTimer(getDeadTime(state.tc.length))
+      }
+
+      if (state.cwp === 0 && state.clp === 1) {
+        startTestTiming()
+      }
     }
   }, [state.clp])
 
@@ -179,6 +213,28 @@ function removePrev(s) {
   )
 }
 
+function getCharFeedback(s, feedback, arr = s.tt) {
+  const count = arr.flatMap((word) =>
+    word.filter((obj) => obj.feedback === feedback)
+  ).length
+  return count
+}
+
+function getRawWPM(s) {
+  const correct = getCharFeedback(s, FEEDBACK.CORRECT) + s.cwp
+  const incorrect = getCharFeedback(s, FEEDBACK.INCORRECT)
+  const outOfBns = getCharFeedback(s, FEEDBACK.OUT_OF_BND)
+  const skipped = getCharFeedback(
+    s,
+    FEEDBACK.OUT_OF_BND,
+    s.tt.splice(0, s.cwp + 1)
+  )
+
+  const rawWpm =
+    ((correct + incorrect + outOfBns + skipped) * (60 / s.timing)) / 5
+  return rawWpm
+}
+
 class Algebra {
   static next(l, s) {
     //inbound
@@ -189,7 +245,14 @@ class Algebra {
           letter: obj.letter,
         }
       }, s)
-      return { tt: newtt, cwp: s.cwp, clp: s.clp + 1, tc: s.tc, timer: s.timer }
+      return {
+        tt: newtt,
+        cwp: s.cwp,
+        clp: s.clp + 1,
+        tc: s.tc,
+        timer: s.timer,
+        timing: s.timing,
+      }
     }
     // outbound
     if (s.tt[s.cwp].length === 24) return s
@@ -205,7 +268,14 @@ class Algebra {
       }
       return wordArr
     })
-    return { tt: newtt, cwp: s.cwp, clp: s.clp + 1, tc: s.tc, timer: s.timer }
+    return {
+      tt: newtt,
+      cwp: s.cwp,
+      clp: s.clp + 1,
+      tc: s.tc,
+      timer: s.timer,
+      timing: s.timing,
+    }
   }
 
   static back(s) {
@@ -224,6 +294,7 @@ class Algebra {
               ).length,
             tc: s.tc,
             timer: s.timer,
+            timing: s.timing,
           }
     }
 
@@ -239,21 +310,49 @@ class Algebra {
           letter: obj.letter,
         }
       }, s)
-      return { tt: newtt, cwp: s.cwp, clp: s.clp - 1, tc: s.tc, timer: s.timer }
+      return {
+        tt: newtt,
+        cwp: s.cwp,
+        clp: s.clp - 1,
+        tc: s.tc,
+        timer: s.timer,
+        timing: s.timing,
+      }
     }
 
     //outbound
     const newtt = removePrev(s)
-    return { tt: newtt, cwp: s.cwp, clp: s.clp - 1, tc: s.tc, timer: s.timer }
+    return {
+      tt: newtt,
+      cwp: s.cwp,
+      clp: s.clp - 1,
+      tc: s.tc,
+      timer: s.timer,
+      timing: s.timing,
+    }
   }
   static space(s) {
     if (s.clp > 0 && s.cwp < s.tt.length) {
       if (s.tc.mode === MODES.TIME) {
         const newTt = [...s.tt]
         newTt.push(getRandomWord())
-        return { tt: newTt, cwp: s.cwp + 1, clp: 0, tc: s.tc, timer: s.timer }
+        return {
+          tt: newTt,
+          cwp: s.cwp + 1,
+          clp: 0,
+          tc: s.tc,
+          timer: s.timer,
+          timing: s.timing,
+        }
       }
-      return { tt: s.tt, cwp: s.cwp + 1, clp: 0, tc: s.tc, timer: s.timer }
+      return {
+        tt: s.tt,
+        cwp: s.cwp + 1,
+        clp: 0,
+        tc: s.tc,
+        timer: s.timer,
+        timing: s.timing,
+      }
     }
     return s
   }
@@ -266,6 +365,7 @@ class Algebra {
         clp: 0,
         tc: s.tc,
         timer: [],
+        timing: s.timing,
       }
     } else if (s.tc.mode === MODES.TIME) {
       return {
@@ -274,6 +374,7 @@ class Algebra {
         clp: 0,
         tc: s.tc,
         timer: [],
+        timing: s.timing,
       }
     }
   }

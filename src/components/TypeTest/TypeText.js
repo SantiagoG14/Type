@@ -5,12 +5,15 @@ import styled from "styled-components"
 import RestartButton from "./RestartButton"
 import TestConfig from "./TestConfig"
 import useTypeTest, { ACTIONS, MODES } from "../../hooks/useTypeTest"
+import TestDone from "../TestDone"
 
 export default function TypeText() {
   const currentWordRef = useRef()
   const caretRef = useRef()
   const testWrapperRef = useRef()
   const restartButtonRef = useRef()
+  const wordKeysRef = useRef(0)
+  const lettersKeyRef = useRef(0)
   const [restartButtonFocus, setRestartButtonFocus] = useState(false)
   const [wordTop, setWordTop] = useState(0)
   const [caretLeft, setCaretLeft] = useState(0)
@@ -99,27 +102,29 @@ export default function TypeText() {
   }, [restartButtonFocus])
 
   const handleKeydown = (e) => {
-    if (e.key.length === 1 && e.key !== " ") {
-      e.preventDefault()
-      setRestartButtonFocus(false)
-      dispatch({
-        type: ACTIONS.MOVE_NEXT_LETTER,
-        payload: {
-          word: state.currentWordStr,
-          key: e.key,
-        },
-      })
-    } else if (e.key === "Backspace") {
-      dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
-    } else if (e.key === " ") {
-      if (restartButtonFocus) {
+    if (!isTestOver()) {
+      if (e.key.length === 1 && e.key !== " ") {
         e.preventDefault()
         setRestartButtonFocus(false)
+        dispatch({
+          type: ACTIONS.MOVE_NEXT_LETTER,
+          payload: {
+            word: state.currentWordStr,
+            key: e.key,
+          },
+        })
+      } else if (e.key === "Backspace") {
+        dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
+      } else if (e.key === " ") {
+        if (restartButtonFocus) {
+          e.preventDefault()
+          setRestartButtonFocus(false)
+        }
+        dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
+      } else if (e.key === "Tab") {
+        e.preventDefault()
+        setRestartButtonFocus(true)
       }
-      dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
-    } else if (e.key === "Tab") {
-      e.preventDefault()
-      setRestartButtonFocus(true)
     }
   }
 
@@ -131,9 +136,12 @@ export default function TypeText() {
 
   const isTestOver = () => {
     if (state.tc.mode === MODES.TIME) {
-      return state.timer[0] > 0
+      return state.timer[0] === 0
     }
-    return state.cwp < state.tt.length
+    return (
+      state.cwp === state.tt.length - 1 &&
+      state.clp === state.tt[state.tt.length].length
+    )
   }
 
   return (
@@ -158,7 +166,7 @@ export default function TypeText() {
             }
           </StyledCounter>
 
-          {isTestOver() ? (
+          {!isTestOver() ? (
             <div
               className="TypeTextWordWrapper"
               style={{ top: `${wordTop}px` }}
@@ -172,7 +180,7 @@ export default function TypeText() {
               )}
             </div>
           ) : (
-            <h1>Test is done</h1>
+            <TestDone state={state} />
           )}
 
           <Caret
