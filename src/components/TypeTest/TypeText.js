@@ -12,8 +12,6 @@ export default function TypeText() {
   const caretRef = useRef()
   const testWrapperRef = useRef()
   const restartButtonRef = useRef()
-  const wordKeysRef = useRef(0)
-  const lettersKeyRef = useRef(0)
   const [restartButtonFocus, setRestartButtonFocus] = useState(false)
   const [wordTop, setWordTop] = useState(0)
   const [caretLeft, setCaretLeft] = useState(0)
@@ -135,13 +133,15 @@ export default function TypeText() {
   }
 
   const isTestOver = () => {
-    if (state.tc.mode === MODES.TIME) {
-      return state.timer[0] === 0
-    }
-    return (
-      state.cwp === state.tt.length - 1 &&
-      state.clp === state.tt[state.tt.length].length
-    )
+    // if (state.tc.mode === MODES.TIME) {
+    //   return state.timer[0] === 0
+    // }
+    // return (
+    //   state.cwp === state.tt.length - 1 &&
+    //   state.clp === state.tt[state.tt.length].length
+    // )
+
+    return false
   }
 
   return (
@@ -153,18 +153,22 @@ export default function TypeText() {
       />
       <StyledWrapper>
         <TestWrapper ref={testWrapperRef}>
-          <StyledCounter>
-            {
-              state.tc.mode === MODES.WORDS
+          <div style={{ display: "flex" }}>
+            <StyledCounter style={{ marginRight: "2rem" }}>
+              {state.tc.mode === MODES.WORDS
                 ? `${state.cwp}/${state.tt.length}`
                 : (state.timer[1] > 0 ? `${state.timer}:` : "") +
                   (state.timer[2] > 0 ? `${state.timer[2]}:` : "") +
                   (state.timer[3] > 9
                     ? `${state.timer[3]}`
-                    : `0${state.timer[3]}`)
-              /* {`${state.cwp}/${state.tt.length}`} */
-            }
-          </StyledCounter>
+                    : `0${state.timer[3]}`)}
+            </StyledCounter>
+            <StyledCounter>
+              {state.wpm.length !== 0
+                ? Math.floor(state.wpm[state.wpm.length - 1])
+                : "0"}
+            </StyledCounter>
+          </div>
 
           {!isTestOver() ? (
             <div
