@@ -133,7 +133,7 @@ const ConfigWrapper = styled.div`
 const ConfigButton = styled.div`
   padding: 1rem;
   color: ${({ theme, active }) =>
-    active ? theme.colors.incorrect : theme.colors.notPressed};
+    active ? theme.colors.main : theme.colors.notPressed};
   font-family: ${({ theme }) => theme.font.primary}, sans-serif;
   cursor: pointer;
   text-transform: capitalize;

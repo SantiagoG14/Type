@@ -5,18 +5,19 @@ import styled from "styled-components"
 import RestartButton from "./RestartButton"
 import TestConfig from "./TestConfig"
 import useTypeTest, { ACTIONS, MODES } from "../../hooks/useTypeTest"
-import TestDone from "../TestDone"
 
 export default function TypeText() {
   const currentWordRef = useRef()
   const caretRef = useRef()
   const testWrapperRef = useRef()
   const restartButtonRef = useRef()
+  const wordsWrapperRef = useRef()
   const [restartButtonFocus, setRestartButtonFocus] = useState(false)
-  const [wordTop, setWordTop] = useState(0)
   const [caretLeft, setCaretLeft] = useState(0)
   const [caretTop, setCaretTop] = useState(0)
+  const [wordTop, setWordTop] = useState(0)
   const [state, dispatch, resetTimer] = useTypeTest()
+  const adjustCaretPixels = 3
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
@@ -25,37 +26,23 @@ export default function TypeText() {
     }
   })
 
-  // get the height of the type text so it only has 3 lines
-
-  useLayoutEffect(() => {
-    let mounted = true
-
-    if (mounted) {
-      testWrapperRef.current.height = `${
-        currentWordRef.current.getBoundingClientRect().height * 3
-      }px`
-    }
-
-    return () => (mounted = false)
-  }, [])
-
   // effect to set the position of caret
 
   useLayoutEffect(() => {
     let mounted = true
 
-    if (mounted && state.cwp !== state.tt.length) {
+    if (mounted) {
       const testWrapperRect = testWrapperRef.current.getBoundingClientRect()
       const pixelsLeftToTest = testWrapperRect.left
       const pixelsTopToTest = testWrapperRect.top
       if (state.clp - 1 < 0) {
         const curLetterNode = currentWordRef.current.children[0]
         const rect = curLetterNode.getBoundingClientRect()
-        setCaretLeft(rect.left - pixelsLeftToTest - 4)
+        setCaretLeft(rect.left - pixelsLeftToTest - adjustCaretPixels)
       } else {
         const curLetterNode = currentWordRef.current.children[state.clp - 1]
         const rect = curLetterNode.getBoundingClientRect()
-        setCaretLeft(rect.right - pixelsLeftToTest - 3)
+        setCaretLeft(rect.right - pixelsLeftToTest - adjustCaretPixels)
       }
 
       const curWordNode = currentWordRef.current
@@ -69,23 +56,30 @@ export default function TypeText() {
   // effect to scroll the text down when the test has more then three lines
   // TODO: add a mask to add the scroll down effect
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true
 
     if (mounted) {
+      console.log(
+        caretTop,
+        currentWordRef.current.getBoundingClientRect().height * 2
+      )
       if (
-        caretTop - 3 ===
+        caretTop ===
         currentWordRef.current.getBoundingClientRect().height * 2
       ) {
+        console.log("here")
         setWordTop(
           (prev) => prev - currentWordRef.current.getBoundingClientRect().height
         )
-        setCaretTop(currentWordRef.current.getBoundingClientRect().height + 3)
+        setCaretTop(currentWordRef.current.getBoundingClientRect().height)
       }
     }
 
     return () => (mounted = false)
   }, [caretTop])
+
+  //set the focus of restart button
 
   useLayoutEffect(() => {
     let mounted = true
@@ -143,14 +137,18 @@ export default function TypeText() {
 
     return false
   }
-
   return (
     <>
-      <TestConfig
-        dispatch={dispatch}
-        testConfig={state.tc}
-        resetTimer={resetTimer}
-      />
+      {(state.timing === 0
+        ? state.clp === 0 && state.cwp === 0
+        : state.timing === 0) && (
+        <TestConfig
+          dispatch={dispatch}
+          testConfig={state.tc}
+          resetTimer={resetTimer}
+        />
+      )}
+
       <StyledWrapper>
         <TestWrapper ref={testWrapperRef}>
           <div style={{ display: "flex" }}>
@@ -170,22 +168,15 @@ export default function TypeText() {
             </StyledCounter>
           </div>
 
-          {!isTestOver() ? (
-            <div
-              className="TypeTextWordWrapper"
-              style={{ top: `${wordTop}px` }}
-            >
-              {state.tt.map((word, i) =>
-                i === state.cwp ? (
-                  <TypeWord word={word} currentWordRef={currentWordRef} />
-                ) : (
-                  <TypeWord word={word} />
-                )
-              )}
-            </div>
-          ) : (
-            <TestDone state={state} />
-          )}
+          <WordsWrapper ref={wordsWrapperRef}>
+            {state.tt.map((word, i) =>
+              i === state.cwp ? (
+                <TypeWord word={word} currentWordRef={currentWordRef} />
+              ) : (
+                <TypeWord word={word} />
+              )
+            )}
+          </WordsWrapper>
 
           <Caret
             caretRef={caretRef}
@@ -238,5 +229,16 @@ const TestWrapper = styled.div`
   position: relative;
   max-width: 58rem;
   position: relative;
-  height: fit-content;
+`
+
+const WordsWrapper = styled.div`
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  transition: top 200ms ease;
+  cursor: default;
+  pointer-events: none;
+  overflow: hidden;
+  align-content: flex-start;
+  height: 125.1428604125977px;
 `

@@ -8,6 +8,7 @@ const theme = {
     correct: "#000000",
     incorrect: "#d70000",
     notPressed: "#b7b7b7",
+    main: "#ff360d",
   },
 
   font: {
