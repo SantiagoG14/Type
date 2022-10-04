@@ -1,4 +1,4 @@
-import { useReducer, useLayoutEffect, useRef } from "react"
+import { useReducer, useLayoutEffect, useRef, useState, useEffect } from "react"
 import getRandomWordList, { getRandomWord } from "../utils/wordGenerator"
 
 export const ACTIONS = {
@@ -9,6 +9,9 @@ export const ACTIONS = {
   RESTART_TEST: "restart-test",
   SET_TEST_CONFIG: "set-test-config",
   UPDATE_TIMER: "update-timer",
+  START_TEST_TIMING: "start-test-timing",
+  END_TEST_TIMING: "end-test-timing",
+  UPDATE_WPM: "update-wpm",
 }
 
 export const FEEDBACK = {
@@ -37,13 +40,13 @@ function reducer(state, action) {
     case ACTIONS.SET_TEST_CONFIG:
       return Algebra.setConfig(action.payload.testConfig)
     case ACTIONS.UPDATE_TIMER:
-      return {
-        tt: state.tt,
-        cwp: state.cwp,
-        clp: state.clp,
-        tc: state.tc,
-        timer: action.payload.newTimer,
-      }
+      return Algebra.updateTimer(state, action.payload.newTimer)
+    case ACTIONS.START_TEST_TIMING:
+      return Algebra.startTestTiming(state)
+    case ACTIONS.END_TEST_TIMING:
+      return Algebra.endTestTiming(state)
+    case ACTIONS.UPDATE_WPM:
+      return Algebra.updateWpm(state, action.payload.wpm, action.payload.rawWpm)
     default:
       return state
   }
@@ -51,7 +54,7 @@ function reducer(state, action) {
 
 export default function useTypeTest() {
   const Ref = useRef(null)
-
+  const testTimingRef = useRef(null)
   const initialTestConfig = {
     mode: MODES.WORDS,
     length: 25,
@@ -68,9 +71,10 @@ export default function useTypeTest() {
     clp: 0,
     tc: initialTestConfig,
     timer: [],
+    timing: 0,
+    wpm: [],
+    rawWpm: [],
   })
-
-  const [total, hours, minutes, seconds] = state.timer
 
   //update timer
 
@@ -117,6 +121,20 @@ export default function useTypeTest() {
     Ref.current = id
   }
 
+  const startTestTiming = () => {
+    if (testTimingRef.current) clearInterval(testTimingRef.current)
+    const id = setInterval(() => {
+      dispatch({ type: ACTIONS.START_TEST_TIMING })
+    }, 1000)
+
+    testTimingRef.current = id
+  }
+
+  const endTestTiming = () => {
+    clearInterval(testTimingRef.current)
+    dispatch({ type: ACTIONS.END_TEST_TIMING })
+  }
+
   const getDeadTime = (seconds = 60) => {
     let deadline = new Date()
     deadline.setSeconds(deadline.getSeconds() + seconds)
@@ -125,13 +143,39 @@ export default function useTypeTest() {
 
   const resetTimer = (length) => {
     clearTimer(getDeadTime(0))
+    endTestTiming()
     startTimer(getDeadTime(length))
   }
 
   useLayoutEffect(() => {
-    if (state.cwp === 0 && state.clp === 1) {
-      if (total < state.tc.length * 1000) return
-      clearTimer(getDeadTime(state.tc.length))
+    let mounted = true
+
+    if (mounted) {
+      const wpm = getWpm(state)
+      const rawWpm = getRawWPM(state)
+      if (state.timing === 0) return
+      dispatch({
+        type: ACTIONS.UPDATE_WPM,
+        payload: {
+          wpm: wpm,
+          rawWpm: rawWpm,
+        },
+      })
+    }
+  }, [state.timing])
+
+  useLayoutEffect(() => {
+    let mounted = true
+
+    if (mounted) {
+      if (state.cwp === 0 && state.clp === 1 && state.tc.mode === MODES.TIME) {
+        if (state.timer[0] < state.tc.length * 1000) return
+        clearTimer(getDeadTime(state.tc.length))
+      }
+
+      if (state.cwp === 0 && state.clp === 1) {
+        startTestTiming()
+      }
     }
   }, [state.clp])
 
@@ -179,6 +223,35 @@ function removePrev(s) {
   )
 }
 
+function getCharFeedback(s, feedback, arr = s.tt) {
+  const updateArr = [...arr]
+  const count = updateArr.flatMap((word) =>
+    word.filter((obj) => obj.feedback === feedback)
+  ).length
+  return count
+}
+
+function getRawWPM(s) {
+  const correct = getCharFeedback(s, FEEDBACK.CORRECT) + s.cwp
+  const incorrect = getCharFeedback(s, FEEDBACK.INCORRECT)
+  const outOfBns = getCharFeedback(s, FEEDBACK.OUT_OF_BND)
+  const skipped = getCharFeedback(
+    s,
+    FEEDBACK.OUT_OF_BND,
+    [...s.tt].splice(0, s.cwp + 1)
+  )
+
+  const rawWpm =
+    ((correct + incorrect + outOfBns + skipped) * (60 / s.timing)) / 5
+  return rawWpm
+}
+
+function getWpm(s) {
+  const correct = getCharFeedback(s, FEEDBACK.CORRECT) + s.cwp
+  const wpm = (correct * (60 / s.timing)) / 5
+  return wpm
+}
+
 class Algebra {
   static next(l, s) {
     //inbound
@@ -189,7 +262,10 @@ class Algebra {
           letter: obj.letter,
         }
       }, s)
-      return { tt: newtt, cwp: s.cwp, clp: s.clp + 1, tc: s.tc, timer: s.timer }
+      const newState = { ...s }
+      newState.tt = newtt
+      newState.clp += 1
+      return newState
     }
     // outbound
     if (s.tt[s.cwp].length === 24) return s
@@ -205,26 +281,28 @@ class Algebra {
       }
       return wordArr
     })
-    return { tt: newtt, cwp: s.cwp, clp: s.clp + 1, tc: s.tc, timer: s.timer }
+
+    const newState = { ...s }
+    newState.tt = newtt
+    newState.clp += 1
+    return newState
   }
 
   static back(s) {
     if (s.clp === 0 && s.cwp === 0) return s
 
     if (s.clp === 0 && s.cwp > 0) {
-      return prevIsPerfect(s)
-        ? s
-        : {
-            tt: s.tt,
-            cwp: s.cwp - 1,
-            clp:
-              s.tt[s.cwp - 1].length -
-              s.tt[s.cwp - 1].filter(
-                (obj) => obj.feedback === FEEDBACK.NOT_PRESSED
-              ).length,
-            tc: s.tc,
-            timer: s.timer,
-          }
+      if (prevIsPerfect(s)) {
+        return s
+      } else {
+        const newState = { ...s }
+        newState.cwp -= 1
+        newState.clp =
+          s.tt[s.cwp - 1].length -
+          s.tt[s.cwp - 1].filter((obj) => obj.feedback === FEEDBACK.NOT_PRESSED)
+            .length
+        return newState
+      }
     }
 
     //inboud
@@ -239,21 +317,36 @@ class Algebra {
           letter: obj.letter,
         }
       }, s)
-      return { tt: newtt, cwp: s.cwp, clp: s.clp - 1, tc: s.tc, timer: s.timer }
+
+      const newState = { ...s }
+      newState.tt = newtt
+      newState.clp -= 1
+      return newState
     }
 
     //outbound
     const newtt = removePrev(s)
-    return { tt: newtt, cwp: s.cwp, clp: s.clp - 1, tc: s.tc, timer: s.timer }
+    const newState = { ...s }
+    newState.tt = newtt
+    newState.clp -= 1
+    return newState
   }
   static space(s) {
     if (s.clp > 0 && s.cwp < s.tt.length) {
       if (s.tc.mode === MODES.TIME) {
-        const newTt = [...s.tt]
-        newTt.push(getRandomWord())
-        return { tt: newTt, cwp: s.cwp + 1, clp: 0, tc: s.tc, timer: s.timer }
+        const newtt = [...s.tt]
+        newtt.push(getRandomWord())
+        const newState = { ...s }
+        newState.tt = newtt
+        newState.cwp += 1
+        newState.clp = 0
+        return newState
       }
-      return { tt: s.tt, cwp: s.cwp + 1, clp: 0, tc: s.tc, timer: s.timer }
+
+      const newState = { ...s }
+      newState.cwp += 1
+      newState.clp = 0
+      return newState
     }
     return s
   }
@@ -266,6 +359,9 @@ class Algebra {
         clp: 0,
         tc: s.tc,
         timer: [],
+        timing: 0,
+        wpm: [],
+        rawWpm: [],
       }
     } else if (s.tc.mode === MODES.TIME) {
       return {
@@ -274,6 +370,9 @@ class Algebra {
         clp: 0,
         tc: s.tc,
         timer: [],
+        timing: 0,
+        wpm: [],
+        rawWpm: [],
       }
     }
   }
@@ -286,6 +385,9 @@ class Algebra {
         clp: 0,
         tc: newTc,
         timer: [],
+        timing: 0,
+        wpm: [],
+        rawWpm: [],
       }
     } else if (newTc.mode === MODES.TIME) {
       return {
@@ -294,7 +396,44 @@ class Algebra {
         clp: 0,
         tc: newTc,
         timer: [],
+        timing: 0,
+        wpm: [],
+        rawWpm: [],
       }
     }
+  }
+
+  static updateTimer(s, newTimer) {
+    const newState = { ...s }
+    newState.timer = newTimer
+    return newState
+  }
+
+  static endTimer(s, ref) {
+    const newState = { ...s }
+    newState.timer = []
+    clearInterval(ref)
+  }
+
+  static startTestTiming(s) {
+    const newState = { ...s }
+    newState.timing += 1
+    return newState
+  }
+
+  static endTestTiming(s) {
+    const newState = { ...s }
+    newState.timing = 0
+    return newState
+  }
+
+  static updateWpm(s, wpm, rawWpm) {
+    const newState = { ...s }
+    // console.log([...newState.rawWpm, rawWpm])
+    const newWpm = [...newState.wpm, wpm]
+    const newRawWpm = [...newState.rawWpm, rawWpm]
+    newState.wpm = newWpm
+    newState.rawWpm = newRawWpm
+    return newState
   }
 }

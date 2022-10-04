@@ -11,11 +11,13 @@ export default function TypeText() {
   const caretRef = useRef()
   const testWrapperRef = useRef()
   const restartButtonRef = useRef()
+  const wordsWrapperRef = useRef()
   const [restartButtonFocus, setRestartButtonFocus] = useState(false)
-  const [wordTop, setWordTop] = useState(0)
   const [caretLeft, setCaretLeft] = useState(0)
   const [caretTop, setCaretTop] = useState(0)
+  const [wordTop, setWordTop] = useState(0)
   const [state, dispatch, resetTimer] = useTypeTest()
+  const adjustCaretPixels = 3
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
@@ -24,37 +26,23 @@ export default function TypeText() {
     }
   })
 
-  // get the height of the type text so it only has 3 lines
-
-  useLayoutEffect(() => {
-    let mounted = true
-
-    if (mounted) {
-      testWrapperRef.current.height = `${
-        currentWordRef.current.getBoundingClientRect().height * 3
-      }px`
-    }
-
-    return () => (mounted = false)
-  }, [])
-
   // effect to set the position of caret
 
   useLayoutEffect(() => {
     let mounted = true
 
-    if (mounted && state.cwp !== state.tt.length) {
+    if (mounted) {
       const testWrapperRect = testWrapperRef.current.getBoundingClientRect()
       const pixelsLeftToTest = testWrapperRect.left
       const pixelsTopToTest = testWrapperRect.top
       if (state.clp - 1 < 0) {
         const curLetterNode = currentWordRef.current.children[0]
         const rect = curLetterNode.getBoundingClientRect()
-        setCaretLeft(rect.left - pixelsLeftToTest - 4)
+        setCaretLeft(rect.left - pixelsLeftToTest - adjustCaretPixels)
       } else {
         const curLetterNode = currentWordRef.current.children[state.clp - 1]
         const rect = curLetterNode.getBoundingClientRect()
-        setCaretLeft(rect.right - pixelsLeftToTest - 3)
+        setCaretLeft(rect.right - pixelsLeftToTest - adjustCaretPixels)
       }
 
       const curWordNode = currentWordRef.current
@@ -68,23 +56,30 @@ export default function TypeText() {
   // effect to scroll the text down when the test has more then three lines
   // TODO: add a mask to add the scroll down effect
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true
 
     if (mounted) {
+      console.log(
+        caretTop,
+        currentWordRef.current.getBoundingClientRect().height * 2
+      )
       if (
-        caretTop - 3 ===
+        caretTop ===
         currentWordRef.current.getBoundingClientRect().height * 2
       ) {
+        console.log("here")
         setWordTop(
           (prev) => prev - currentWordRef.current.getBoundingClientRect().height
         )
-        setCaretTop(currentWordRef.current.getBoundingClientRect().height + 3)
+        setCaretTop(currentWordRef.current.getBoundingClientRect().height)
       }
     }
 
     return () => (mounted = false)
   }, [caretTop])
+
+  //set the focus of restart button
 
   useLayoutEffect(() => {
     let mounted = true
@@ -99,27 +94,29 @@ export default function TypeText() {
   }, [restartButtonFocus])
 
   const handleKeydown = (e) => {
-    if (e.key.length === 1 && e.key !== " ") {
-      e.preventDefault()
-      setRestartButtonFocus(false)
-      dispatch({
-        type: ACTIONS.MOVE_NEXT_LETTER,
-        payload: {
-          word: state.currentWordStr,
-          key: e.key,
-        },
-      })
-    } else if (e.key === "Backspace") {
-      dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
-    } else if (e.key === " ") {
-      if (restartButtonFocus) {
+    if (!isTestOver()) {
+      if (e.key.length === 1 && e.key !== " ") {
         e.preventDefault()
         setRestartButtonFocus(false)
+        dispatch({
+          type: ACTIONS.MOVE_NEXT_LETTER,
+          payload: {
+            word: state.currentWordStr,
+            key: e.key,
+          },
+        })
+      } else if (e.key === "Backspace") {
+        dispatch({ type: ACTIONS.MOVE_PREV_LETTER })
+      } else if (e.key === " ") {
+        if (restartButtonFocus) {
+          e.preventDefault()
+          setRestartButtonFocus(false)
+        }
+        dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
+      } else if (e.key === "Tab") {
+        e.preventDefault()
+        setRestartButtonFocus(true)
       }
-      dispatch({ type: ACTIONS.MOVE_NEXT_WORD })
-    } else if (e.key === "Tab") {
-      e.preventDefault()
-      setRestartButtonFocus(true)
     }
   }
 
@@ -130,50 +127,56 @@ export default function TypeText() {
   }
 
   const isTestOver = () => {
-    if (state.tc.mode === MODES.TIME) {
-      return state.timer[0] > 0
-    }
-    return state.cwp < state.tt.length
-  }
+    // if (state.tc.mode === MODES.TIME) {
+    //   return state.timer[0] === 0
+    // }
+    // return (
+    //   state.cwp === state.tt.length - 1 &&
+    //   state.clp === state.tt[state.tt.length].length
+    // )
 
+    return false
+  }
   return (
     <>
-      <TestConfig
-        dispatch={dispatch}
-        testConfig={state.tc}
-        resetTimer={resetTimer}
-      />
+      {(state.timing === 0
+        ? state.clp === 0 && state.cwp === 0
+        : state.timing === 0) && (
+        <TestConfig
+          dispatch={dispatch}
+          testConfig={state.tc}
+          resetTimer={resetTimer}
+        />
+      )}
+
       <StyledWrapper>
         <TestWrapper ref={testWrapperRef}>
-          <StyledCounter>
-            {
-              state.tc.mode === MODES.WORDS
+          <div style={{ display: "flex" }}>
+            <StyledCounter style={{ marginRight: "2rem" }}>
+              {state.tc.mode === MODES.WORDS
                 ? `${state.cwp}/${state.tt.length}`
                 : (state.timer[1] > 0 ? `${state.timer}:` : "") +
                   (state.timer[2] > 0 ? `${state.timer[2]}:` : "") +
                   (state.timer[3] > 9
                     ? `${state.timer[3]}`
-                    : `0${state.timer[3]}`)
-              /* {`${state.cwp}/${state.tt.length}`} */
-            }
-          </StyledCounter>
+                    : `0${state.timer[3]}`)}
+            </StyledCounter>
+            <StyledCounter>
+              {state.wpm.length !== 0
+                ? Math.floor(state.wpm[state.wpm.length - 1])
+                : "0"}
+            </StyledCounter>
+          </div>
 
-          {isTestOver() ? (
-            <div
-              className="TypeTextWordWrapper"
-              style={{ top: `${wordTop}px` }}
-            >
-              {state.tt.map((word, i) =>
-                i === state.cwp ? (
-                  <TypeWord word={word} currentWordRef={currentWordRef} />
-                ) : (
-                  <TypeWord word={word} />
-                )
-              )}
-            </div>
-          ) : (
-            <h1>Test is done</h1>
-          )}
+          <WordsWrapper ref={wordsWrapperRef}>
+            {state.tt.map((word, i) =>
+              i === state.cwp ? (
+                <TypeWord word={word} currentWordRef={currentWordRef} />
+              ) : (
+                <TypeWord word={word} />
+              )
+            )}
+          </WordsWrapper>
 
           <Caret
             caretRef={caretRef}
@@ -226,5 +229,16 @@ const TestWrapper = styled.div`
   position: relative;
   max-width: 58rem;
   position: relative;
-  height: fit-content;
+`
+
+const WordsWrapper = styled.div`
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  transition: top 200ms ease;
+  cursor: default;
+  pointer-events: none;
+  overflow: hidden;
+  align-content: flex-start;
+  height: 125.1428604125977px;
 `

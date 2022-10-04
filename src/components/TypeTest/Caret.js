@@ -30,7 +30,19 @@ const StyledCaret = styled.div`
   z-index: 1;
   top: 0;
   left: 0;
-  opacity: ${({ restartbuttonfocus }) =>
-    restartbuttonfocus === "true" ? 0 : 1};
-  transition: opacity 200ms ease;
+  /* animation: afk 1000ms ease;
+  animation-iteration-count: infinite; */
+
+  @keyframes afk {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
 `
