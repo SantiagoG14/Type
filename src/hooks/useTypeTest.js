@@ -365,7 +365,7 @@ class Algebra {
       }
     } else if (s.tc.mode === MODES.TIME) {
       return {
-        tt: getRandomWordList(30),
+        tt: getRandomWordList(50),
         cwp: 0,
         clp: 0,
         tc: s.tc,
@@ -391,7 +391,7 @@ class Algebra {
       }
     } else if (newTc.mode === MODES.TIME) {
       return {
-        tt: getRandomWordList(30),
+        tt: getRandomWordList(50),
         cwp: 0,
         clp: 0,
         tc: newTc,

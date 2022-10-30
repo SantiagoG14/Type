@@ -36,16 +36,18 @@ export default function TypeText() {
       const pixelsLeftToTest = testWrapperRect.left
       const pixelsTopToTest = testWrapperRect.top
       if (state.clp - 1 < 0) {
-        const curLetterNode = currentWordRef.current.children[0]
+        const curLetterNode =
+          wordsWrapperRef.current.children[state.cwp].children[0]
         const rect = curLetterNode.getBoundingClientRect()
         setCaretLeft(rect.left - pixelsLeftToTest - adjustCaretPixels)
       } else {
-        const curLetterNode = currentWordRef.current.children[state.clp - 1]
+        const curLetterNode =
+          wordsWrapperRef.current.children[state.cwp].children[state.clp - 1]
         const rect = curLetterNode.getBoundingClientRect()
         setCaretLeft(rect.right - pixelsLeftToTest - adjustCaretPixels)
       }
 
-      const curWordNode = currentWordRef.current
+      const curWordNode = wordsWrapperRef.current.children[state.cwp]
       const rect = curWordNode.getBoundingClientRect()
       setCaretTop(rect.top - pixelsTopToTest)
     }
@@ -57,27 +59,12 @@ export default function TypeText() {
   // TODO: add a mask to add the scroll down effect
 
   useEffect(() => {
-    let mounted = true
-
-    if (mounted) {
-      console.log(
-        caretTop,
-        currentWordRef.current.getBoundingClientRect().height * 2
-      )
-      if (
-        caretTop ===
-        currentWordRef.current.getBoundingClientRect().height * 2
-      ) {
-        console.log("here")
-        setWordTop(
-          (prev) => prev - currentWordRef.current.getBoundingClientRect().height
-        )
-        setCaretTop(currentWordRef.current.getBoundingClientRect().height)
-      }
-    }
-
-    return () => (mounted = false)
-  }, [caretTop])
+    console.log(wordsWrapperRef.current.getBoundingClientRect(), "wrapper")
+    console.log(
+      wordsWrapperRef.current.children[16].getBoundingClientRect(),
+      "word"
+    )
+  }, [])
 
   //set the focus of restart button
 
@@ -169,13 +156,21 @@ export default function TypeText() {
           </div>
 
           <WordsWrapper ref={wordsWrapperRef}>
-            {state.tt.map((word, i) =>
-              i === state.cwp ? (
-                <TypeWord word={word} currentWordRef={currentWordRef} />
-              ) : (
-                <TypeWord word={word} />
-              )
-            )}
+            {/* {Math.floor(caretTop) === 145
+              ? state.tt
+                  .filter(
+                    (word, i) =>
+                      wordsWrapperRef.current.children[
+                        i
+                      ].getBoundingClientRect().y ===
+                      wordsWrapperRef.current.getBoundingClientRect().y
+                  )
+                  .map((word) => <TypeWord word={word} />)
+              : state.tt.map((word, i) => <TypeWord word={word} />)} */}
+
+            {state.tt.map((word, i) => (
+              <TypeWord word={word} />
+            ))}
           </WordsWrapper>
 
           <Caret

@@ -58,22 +58,5 @@ export const useCountDown = () => {
     clearNewTimer(0)
   }
 
-  // const timerToString = () => {
-  //   const str =
-  //     (timer.hours > 9
-  //       ? `${timer.hours}:`
-  //       : timer.hours === 0
-  //       ? ""
-  //       : `0${timer.hours}:`) +
-  //     (timer.minutes > 9
-  //       ? `${timer.minutes}`
-  //       : timer.minutes === 0
-  //       ? ""
-  //       : `0${timer.minutes}:`) +
-  //     (timer.seconds > 9 ? timer.seconds : "0" + timer.seconds)
-
-  //   return str
-  // }
-
   return [timer, newTimer, clearNewTimer]
 }

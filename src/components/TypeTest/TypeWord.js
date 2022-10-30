@@ -1,8 +1,9 @@
 import React from "react"
 import styled from "styled-components"
 import TypeLetter from "./TypeLetter"
+import { useRef } from "react"
 
-export default function TypeWord({ word, currentWordRef, carretTop }) {
+export default function TypeWord({ word, currentWordRef }) {
   return (
     <StyledTypeWord ref={currentWordRef}>
       {word.map((letter) => (
