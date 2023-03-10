@@ -13,7 +13,7 @@ export default function Caret({
       as={motion.div}
       ref={caretRef}
       animate={{ left: curLeft, top: curTop }}
-      transition={{ ease: "linear", duration: 0.13 }}
+      transition={{ ease: "linear", duration: 0.1 }}
       imgurl={process.env.PUBLIC_URL + "/carrot.png"}
       restartbuttonfocus={restartbuttonfocus}
     ></StyledCaret>
