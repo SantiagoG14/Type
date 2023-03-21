@@ -17,7 +17,7 @@ export default function TypeText() {
   const [caretTop, setCaretTop] = useState(0)
   const [state, dispatch, resetTimer] = useTypeTest()
   const adjustCaretPixels = 3
-  const caretHeighChange = useRef(-2)
+  const caretHeighChange = useRef(0)
   const wordCountTracker = useRef(new Map())
   const [numOfHiddenWords, setNumOfHiddenWords] = useState(0)
 
@@ -118,11 +118,12 @@ export default function TypeText() {
 
   // effect to scroll the text down when the test has more then three lines
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true
+    caretHeighChange.current = caretHeighChange.current + 1
+
     if (mounted) {
       // console.log(caretTop)
-      caretHeighChange.current = caretHeighChange.current + 1
       console.log(wordCountTracker.current, caretHeighChange.current)
 
       if (caretHeighChange.current >= 0) {
@@ -139,12 +140,13 @@ export default function TypeText() {
     return () => (mounted = false)
   }, [caretTop])
 
-  // useEffect(() => {
-  //   console.log("left", caretLeft)
-  // }, [caretLeft])
+  // // useEffect(() => {
+  // //   console.log("left", caretLeft)
+  // // }, [caretLeft])
 
   // useEffect(() => {
-  //   console.log("top", caretTop)
+  //   console.log(caretHeighChange.current)
+  //   caretHeighChange.current = caretHeighChange.current + 1
   // }, [caretTop])
 
   //set the focus of restart button
@@ -161,6 +163,9 @@ export default function TypeText() {
     return () => (mounted = false)
   }, [restartButtonFocus])
 
+  useEffect(() => {
+    console.log("current caretHeight", caretHeighChange.current)
+  }, [caretHeighChange.current])
   const handleKeydown = (e) => {
     if (!isTestOver()) {
       if (e.key.length === 1 && e.key !== " ") {
@@ -192,7 +197,7 @@ export default function TypeText() {
     dispatch({ type: ACTIONS.RESTART_TEST })
     setRestartButtonFocus(false)
     resetTimer(state.tc.length)
-    caretHeighChange.current = -1
+    caretHeighChange.current = 0
     wordCountTracker.current = new Map()
     setNumOfHiddenWords(0)
   }
@@ -244,7 +249,12 @@ export default function TypeText() {
             {state.tt.map((word, i) => {
               return (
                 i >= numOfHiddenWords && (
-                  <TypeWord word={word} myPosition={i} curWordPos={state.cwp} />
+                  <TypeWord
+                    word={word}
+                    myPosition={i}
+                    curWordPos={state.cwp}
+                    key={i}
+                  />
                 )
               )
             })}
