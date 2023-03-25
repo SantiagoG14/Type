@@ -5,19 +5,22 @@ import styled from "styled-components"
 import RestartButton from "./RestartButton"
 import TestConfig from "./TestConfig"
 import useTypeTest, { ACTIONS, MODES } from "../../hooks/useTypeTest"
+import { AnimatePresence, motion } from "framer-motion"
+import { FEEDBACK } from "../../hooks/useTypeText"
 
 export default function TypeText() {
-  const currentWordRef = useRef()
   const caretRef = useRef()
   const testWrapperRef = useRef()
   const restartButtonRef = useRef()
   const wordsWrapperRef = useRef()
   const [restartButtonFocus, setRestartButtonFocus] = useState(false)
-  const [caretLeft, setCaretLeft] = useState(0)
+  const [caretLeft, setCaretLeft] = useState(-2)
   const [caretTop, setCaretTop] = useState(0)
-  const [wordTop, setWordTop] = useState(0)
   const [state, dispatch, resetTimer] = useTypeTest()
   const adjustCaretPixels = 3
+  const caretCol = useRef(-1)
+  const wordCountTracker = useRef(new Map())
+  const [numOfHiddenWords, setNumOfHiddenWords] = useState(0)
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
@@ -29,59 +32,89 @@ export default function TypeText() {
   // effect to set the position of caret
 
   useLayoutEffect(() => {
-    let mounted = true
+    let canceled = false
 
-    if (mounted) {
+    const updateCaretPosition = () => {
+      if (canceled) {
+        return
+      }
+
       const testWrapperRect = testWrapperRef.current.getBoundingClientRect()
       const pixelsLeftToTest = testWrapperRect.left
       const pixelsTopToTest = testWrapperRect.top
+
       if (state.clp - 1 < 0) {
-        const curLetterNode = currentWordRef.current.children[0]
+        const curLetterNode =
+          wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+            .children[0]
         const rect = curLetterNode.getBoundingClientRect()
         setCaretLeft(rect.left - pixelsLeftToTest - adjustCaretPixels)
       } else {
-        const curLetterNode = currentWordRef.current.children[state.clp - 1]
+        const curLetterNode =
+          wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+            .children[state.clp - 1]
         const rect = curLetterNode.getBoundingClientRect()
         setCaretLeft(rect.right - pixelsLeftToTest - adjustCaretPixels)
       }
 
-      const curWordNode = currentWordRef.current
+      const curWordNode =
+        wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
       const rect = curWordNode.getBoundingClientRect()
-      setCaretTop(rect.top - pixelsTopToTest)
+
+      setCaretTop((prev) => {
+        if (prev !== rect.top - pixelsTopToTest) {
+          return rect.top - pixelsTopToTest
+        }
+
+        // if (caretLeft === -3 && rect.top - pixelsTopToTest < prev) {
+        //   caretCol.current = caretCol - 1
+        // }
+        return prev
+      })
     }
 
-    return () => (mounted = false)
-  }, [state.clp, state.cwp, state.tt])
+    updateCaretPosition()
+
+    return () => {
+      canceled = true
+    }
+  }, [
+    state.clp,
+    state.cwp,
+    state.tt,
+    numOfHiddenWords,
+    testWrapperRef,
+    wordsWrapperRef,
+  ])
 
   // effect to scroll the text down when the test has more then three lines
-  // TODO: add a mask to add the scroll down effect
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let mounted = true
 
     if (mounted) {
-      console.log(
-        caretTop,
-        currentWordRef.current.getBoundingClientRect().height * 2
-      )
-      if (
-        caretTop ===
-        currentWordRef.current.getBoundingClientRect().height * 2
-      ) {
-        console.log("here")
-        setWordTop(
-          (prev) => prev - currentWordRef.current.getBoundingClientRect().height
-        )
-        setCaretTop(currentWordRef.current.getBoundingClientRect().height)
+      if (caretLeft === -3) {
+        caretCol.current = caretCol.current + 1
+        wordCountTracker.current.set(caretCol.current, state.cwp)
+        console.log(caretCol, wordCountTracker)
+
+        if (caretCol.current === 2) {
+          setNumOfHiddenWords(wordCountTracker.current.get(1))
+          caretCol.current = 0
+        }
       }
     }
 
     return () => (mounted = false)
   }, [caretTop])
 
-  //set the focus of restart button
+  useEffect(() => {
+    if (caretLeft === -3) {
+      console.log(caretTop)
+    }
+  }, [caretLeft])
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true
 
     if (mounted) {
@@ -124,6 +157,9 @@ export default function TypeText() {
     dispatch({ type: ACTIONS.RESTART_TEST })
     setRestartButtonFocus(false)
     resetTimer(state.tc.length)
+    caretCol.current = -1
+    wordCountTracker.current = new Map()
+    setNumOfHiddenWords(0)
   }
 
   const isTestOver = () => {
@@ -139,15 +175,16 @@ export default function TypeText() {
   }
   return (
     <>
-      {(state.timing === 0
-        ? state.clp === 0 && state.cwp === 0
-        : state.timing === 0) && (
-        <TestConfig
-          dispatch={dispatch}
-          testConfig={state.tc}
-          resetTimer={resetTimer}
-        />
-      )}
+      <TestConfig
+        dispatch={dispatch}
+        testConfig={state.tc}
+        resetTimer={resetTimer}
+        appear={
+          state.timing === 0
+            ? state.clp === 0 && state.cwp === 0
+            : state.timing === 0
+        }
+      />
 
       <StyledWrapper>
         <TestWrapper ref={testWrapperRef}>
@@ -169,13 +206,21 @@ export default function TypeText() {
           </div>
 
           <WordsWrapper ref={wordsWrapperRef}>
-            {state.tt.map((word, i) =>
-              i === state.cwp ? (
-                <TypeWord word={word} currentWordRef={currentWordRef} />
-              ) : (
-                <TypeWord word={word} />
+            {state.tt.map((word, i) => {
+              const key = word
+                .filter((letter) => letter.feedback !== FEEDBACK.OUT_OF_BND)
+                .reduce((acc, cur) => acc + cur.id, "")
+              return (
+                i >= numOfHiddenWords && (
+                  <TypeWord
+                    word={word}
+                    myPosition={i}
+                    curWordPos={state.cwp}
+                    key={key}
+                  />
+                )
               )
-            )}
+            })}
           </WordsWrapper>
 
           <Caret
@@ -241,4 +286,5 @@ const WordsWrapper = styled.div`
   overflow: hidden;
   align-content: flex-start;
   height: 125.1428604125977px;
+  top: 16px;
 `

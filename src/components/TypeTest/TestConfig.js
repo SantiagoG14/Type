@@ -2,7 +2,12 @@ import React from "react"
 import styled from "styled-components"
 import { ACTIONS } from "../../hooks/useTypeText"
 import { MODES } from "../../hooks/useTypeTest"
-export default function TestConfig({ dispatch, testConfig, resetTimer }) {
+export default function TestConfig({
+  dispatch,
+  testConfig,
+  resetTimer,
+  appear,
+}) {
   const handleClick = (testConfig) => {
     dispatch({
       type: ACTIONS.SET_TEST_CONFIG,
@@ -13,7 +18,7 @@ export default function TestConfig({ dispatch, testConfig, resetTimer }) {
     resetTimer(testConfig.length)
   }
   return (
-    <ConfigWrapper className="row">
+    <ConfigWrapper className="row" appear={appear}>
       {(testConfig.mode === MODES.WORDS || testConfig.mode === MODES.TIME) && (
         <>
           <ConfigButton>Punctiation</ConfigButton>
@@ -127,6 +132,8 @@ const ConfigWrapper = styled.div`
   height: 2rem;
   align-items: center;
   padding: 1.5rem;
+  opacity: ${({ appear }) => (appear ? "1" : "0")};
+  transition: opacity 200ms ease-out;
   /* margin-bottom: 5rem; */
 `
 

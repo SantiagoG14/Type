@@ -1,4 +1,5 @@
 import { FEEDBACK } from "../hooks/useTypeText"
+import { v4 as uuidv4 } from "uuid"
 
 export function getRandomWord() {
   const randomIndex = Math.floor(Math.random() * mostCommon200.length)
@@ -10,6 +11,7 @@ function getLettersArray(strWord, feedback) {
     return {
       letter: l,
       feedback: feedback,
+      id: uuidv4(),
     }
   })
 }
