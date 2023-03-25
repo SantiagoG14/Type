@@ -40,11 +40,11 @@ export default function TypeWord({
 
 const StyledTypeWord = styled.div`
   display: flex;
-  margin-right: 12px;
-  margin-bottom: 12px;
   font-size: 1.5rem;
   font-family: ${({ theme }) => theme.font.primary}, sans-serif;
   text-decoration: ${({ underline }) => (underline ? "underline" : "")};
   text-decoration-color: ${({ theme }) => theme.colors.incorrect};
   text-underline-offset: 0.35rem;
+  margin-right: 12px;
+  margin-bottom: 12px;
 `

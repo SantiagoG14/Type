@@ -1,5 +1,6 @@
 import { useReducer, useLayoutEffect, useRef, useState, useEffect } from "react"
 import getRandomWordList, { getRandomWord } from "../utils/wordGenerator"
+import { v4 as uuidv4 } from "uuid"
 
 export const ACTIONS = {
   MOVE_NEXT_LETTER: "move-next-letter",
@@ -219,7 +220,7 @@ function replacePrev(f, state) {
 
 function removePrev(s) {
   return s.tt.map((word, i) =>
-    i === s.cwp ? word.filter((obj, j) => j !== word.length - 1) : word
+    i === s.cwp ? word.filter((_, j) => j !== word.length - 1) : word
   )
 }
 
@@ -260,6 +261,7 @@ class Algebra {
         return {
           feedback: obj.letter === l ? FEEDBACK.CORRECT : FEEDBACK.INCORRECT,
           letter: obj.letter,
+          id: obj.id,
         }
       }, s)
       const newState = { ...s }
@@ -276,6 +278,7 @@ class Algebra {
           {
             feedback: FEEDBACK.OUT_OF_BND,
             letter: l,
+            id: uuidv4(),
           },
         ]
       }
@@ -315,6 +318,7 @@ class Algebra {
         return {
           feedback: FEEDBACK.NOT_PRESSED,
           letter: obj.letter,
+          id: obj.id,
         }
       }, s)
 
