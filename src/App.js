@@ -1,14 +1,15 @@
 import TypeText from "./components/TypeTest/TypeText"
-import { ThemeProvider } from "styled-components"
+import styled, { ThemeProvider } from "styled-components"
 import { GlobalStyles } from "./components/GlobalStyles"
-import { useCountDown } from "./hooks/useCountdown"
 
 const theme = {
   colors: {
-    correct: "#000000",
-    incorrect: "#d70000",
-    notPressed: "#b7b7b7",
-    main: "#ff360d",
+    correct: "#080909",
+    incorrect: "#c87e74",
+    notPressed: "#99947f",
+    main: "#080909",
+    bg: "#eeebe2",
+    altColor: "#d3cfc1",
   },
 
   font: {
@@ -18,22 +19,24 @@ const theme = {
 }
 
 function App() {
-  // const [timer, newTimer, clearNewTimer] = useCountDown()
-  // const [total, hours, minutes, seconds] = timer
   return (
-    <div className="App">
-      <ThemeProvider theme={theme}>
+    <ThemeProvider theme={theme}>
+      <StyledApp>
         <GlobalStyles />
         <TypeText />
-        {/* <h2>{seconds}</h2>
-        <button onClick={() => newTimer(10)}>35 seconds</button>
-        <button onClick={() => newTimer(0)}>resetTimer</button>
-        <button onClick={() => clearNewTimer(10)}>start</button>
-
-        <div>{total === 0 ? "test over" : "test going"}</div> */}
-      </ThemeProvider>
-    </div>
+      </StyledApp>
+    </ThemeProvider>
   )
 }
+
+const StyledApp = styled.div`
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: ${({ theme }) => theme.colors.bg};
+`
 
 export default App

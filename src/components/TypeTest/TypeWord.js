@@ -1,8 +1,6 @@
-import { useMemo, useRef } from "react"
 import styled from "styled-components"
 import TypeLetter from "./TypeLetter"
 import { FEEDBACK } from "../../hooks/useTypeText"
-import { AnimatePresence, motion } from "framer-motion"
 
 export default function TypeWord({
   word,
@@ -10,12 +8,6 @@ export default function TypeWord({
   myPosition,
   curWordPos,
 }) {
-  const key = useRef(0)
-
-  function updateKey() {
-    key.current += 1
-    return key.current
-  }
   const underlineIncorrect = () => {
     if (myPosition < curWordPos) {
       return (
@@ -47,4 +39,5 @@ const StyledTypeWord = styled.div`
   text-underline-offset: 0.35rem;
   margin-right: 12px;
   margin-bottom: 12px;
+  font-weight: 400;
 `

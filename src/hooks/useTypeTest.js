@@ -180,7 +180,7 @@ export default function useTypeTest() {
     }
   }, [state.clp])
 
-  return [state, dispatch, resetTimer]
+  return [state, dispatch, resetTimer, testTimingRef]
 }
 
 // helper functions
