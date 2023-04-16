@@ -5,8 +5,7 @@ import styled from "styled-components"
 import RestartButton from "./RestartButton"
 import TestConfig from "./TestConfig"
 import useTypeTest, { ACTIONS, MODES } from "../../hooks/useTypeTest"
-import { AnimatePresence, motion } from "framer-motion"
-import { FEEDBACK } from "../../hooks/useTypeText"
+import { FEEDBACK } from "../../hooks/useTypeTest"
 
 export default function TypeText() {
   const caretRef = useRef()
@@ -16,11 +15,11 @@ export default function TypeText() {
   const [restartButtonFocus, setRestartButtonFocus] = useState(false)
   const [caretLeft, setCaretLeft] = useState(-2)
   const [caretTop, setCaretTop] = useState(0)
-  // const [wordTop, setWordTop] = useState(0)
-  const [state, dispatch, resetTimer, testTimeRef] = useTypeTest()
+  const [state, dispatch, resetTimer] = useTypeTest()
   const adjustCaretPixels = 3
   const wordCountTracker = useRef(new Map())
   const [numOfHiddenWords, setNumOfHiddenWords] = useState(0)
+  const curRow = useRef(0)
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
@@ -29,72 +28,114 @@ export default function TypeText() {
     }
   })
 
+  function updateCaretX(pixelsLeftToTest) {
+    const curLetterNode =
+      state.clp - 1 < 0
+        ? wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+            .children[0]
+        : wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+            .children[state.clp - 1]
+    const rect = curLetterNode.getBoundingClientRect()
+    return rect.left - pixelsLeftToTest - adjustCaretPixels
+  }
+
+  function updateCaretY(pixelsTopToTest) {
+    const curWordNode =
+      wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+    const rect = curWordNode.getBoundingClientRect()
+    return rect.top - pixelsTopToTest
+  }
+
+  function scroll(curWordRect, pixelsTopToTest, firstWordNode) {
+    const row = Math.round(
+      (curWordRect.top -
+        pixelsTopToTest -
+        testWrapperRef.current.children[0].getBoundingClientRect().height) /
+        (firstWordNode.height + 12)
+    )
+    curRow.current = row
+
+    if (row === 2) {
+      if (wordCountTracker.current.get(2)) {
+        wordCountTracker.current.set(0, wordCountTracker.current.get(2) - 1)
+      }
+      setNumOfHiddenWords(wordCountTracker.current.get(0))
+    }
+    // setCaretTop(rect.top - pixelsTopToTest)
+
+    wordCountTracker.current.set(row, state.cwp + 1)
+  }
+
   // effect to set the position of caret
 
-  useLayoutEffect(() => {
-    let canceled = false
+  // useLayoutEffect(() => {
+  //   let canceled = false
 
-    const updateCaretPosition = () => {
-      if (canceled) {
-        return
-      }
+  //   const updateCaretPosition = () => {
+  //     if (canceled) {
+  //       return
+  //     }
 
-      const testWrapperRect = testWrapperRef.current.getBoundingClientRect()
-      const pixelsLeftToTest = testWrapperRect.left
-      const pixelsTopToTest = testWrapperRect.top
+  //     const testWrapperRect = testWrapperRef.current.getBoundingClientRect()
+  //     const pixelsLeftToTest = testWrapperRect.left
+  //     const pixelsTopToTest = testWrapperRect.top
 
-      if (state.clp - 1 < 0) {
-        const curLetterNode =
-          wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
-            .children[0]
-        const rect = curLetterNode.getBoundingClientRect()
-        setCaretLeft(rect.left - pixelsLeftToTest - adjustCaretPixels)
-      } else {
-        const curLetterNode =
-          wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
-            .children[state.clp - 1]
-        const rect = curLetterNode.getBoundingClientRect()
-        setCaretLeft(rect.right - pixelsLeftToTest - adjustCaretPixels)
-      }
+  //     if (state.clp - 1 < 0) {
+  //       const curLetterNode =
+  //         wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+  //           .children[0]
+  //       const rect = curLetterNode.getBoundingClientRect()
+  //       setCaretLeft(rect.left - pixelsLeftToTest - adjustCaretPixels)
+  //     } else {
+  //       const curLetterNode =
+  //         wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+  //           .children[state.clp - 1]
+  //       const rect = curLetterNode.getBoundingClientRect()
+  //       setCaretLeft(rect.right - pixelsLeftToTest - adjustCaretPixels)
+  //     }
 
-      const curWordNode =
-        wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
-      const firstWordNode =
-        wordsWrapperRef.current.children[0].getBoundingClientRect()
-      const rect = curWordNode.getBoundingClientRect()
+  //     const curWordNode =
+  //       wordsWrapperRef.current.children[state.cwp - numOfHiddenWords]
+  //     const firstWordNode =
+  //       wordsWrapperRef.current.children[0].getBoundingClientRect()
+  //     const rect = curWordNode.getBoundingClientRect()
 
-      // scroll behavior
+  //     // scroll behavior
 
-      const row = Math.round(
-        (rect.top -
-          pixelsTopToTest -
-          testWrapperRef.current.children[0].getBoundingClientRect().height) /
-          (firstWordNode.height + 12)
-      )
-      if (row === 2) {
-        if (wordCountTracker.current.get(2)) {
-          wordCountTracker.current.set(0, wordCountTracker.current.get(2) - 1)
-        }
-        setNumOfHiddenWords(wordCountTracker.current.get(0))
-      }
-      setCaretTop(rect.top - pixelsTopToTest)
+  //     const row = Math.round(
+  //       (rect.top -
+  //         pixelsTopToTest -
+  //         testWrapperRef.current.children[0].getBoundingClientRect().height) /
+  //         (firstWordNode.height + 12)
+  //      curRow.current = row
+  //     )
+  //     if (row === 2) {
+  //       if (wordCountTracker.current.get(2)) {
+  //         wordCountTracker.current.set(0, wordCountTracker.current.get(2) - 1)
+  //       }
+  //       setNumOfHiddenWords(wordCountTracker.current.get(0))
+  //     }
+  //     setCaretTop(rect.top - pixelsTopToTest)
 
-      wordCountTracker.current.set(row, state.cwp + 1)
-    }
+  //     wordCountTracker.current.set(row, state.cwp + 1)
+  //   }
 
-    updateCaretPosition()
+  //   console.time("updating caret")
 
-    return () => {
-      canceled = true
-    }
-  }, [
-    state.clp,
-    state.cwp,
-    state.tt,
-    numOfHiddenWords,
-    testWrapperRef,
-    wordsWrapperRef,
-  ])
+  //   updateCaretPosition()
+
+  //   console.timeEnd("updating caret")
+  //   return () => {
+  //     canceled = true
+  //   }
+  // }, [
+  //   state.clp,
+  //   state.cwp,
+  //   state.tt,
+  //   numOfHiddenWords,
+  //   testWrapperRef,
+  //   wordsWrapperRef,
+  // ])
 
   useEffect(() => {
     let mounted = true
@@ -207,12 +248,12 @@ export default function TypeText() {
             </WordsWrapper>
           </div>
 
-          <Caret
+          {/* <Caret
             caretRef={caretRef}
             curLeft={caretLeft}
             curTop={caretTop}
             restartbuttonfocus={restartButtonFocus.toString()}
-          />
+          /> */}
         </TestWrapper>
 
         <RestartButton

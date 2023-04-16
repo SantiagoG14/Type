@@ -1,7 +1,6 @@
 import React from "react"
 import styled from "styled-components"
-import { ACTIONS } from "../../hooks/useTypeText"
-import { MODES } from "../../hooks/useTypeTest"
+import { MODES, ACTIONS } from "../../hooks/useTypeTest"
 export default function TestConfig({
   dispatch,
   testConfig,

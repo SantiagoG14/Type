@@ -1,4 +1,4 @@
-import { useReducer, useLayoutEffect, useRef, useState, useEffect } from "react"
+import { useReducer, useLayoutEffect, useRef } from "react"
 import getRandomWordList, { getRandomWord } from "../utils/wordGenerator"
 import { v4 as uuidv4 } from "uuid"
 
@@ -148,6 +148,9 @@ export default function useTypeTest() {
     startTimer(getDeadTime(length))
   }
 
+  // calculate wpm and raw wpm every second
+  // test passes
+
   useLayoutEffect(() => {
     let mounted = true
 
@@ -164,6 +167,8 @@ export default function useTypeTest() {
       })
     }
   }, [state.timing])
+
+  // start timer
 
   useLayoutEffect(() => {
     let mounted = true

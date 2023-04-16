@@ -1,13 +1,15 @@
 import styled from "styled-components"
 import TypeLetter from "./TypeLetter"
-import { FEEDBACK } from "../../hooks/useTypeText"
+import { FEEDBACK } from "../../hooks/useTypeTest"
+import { useMemo, memo } from "react"
 
-export default function TypeWord({
+export default memo(function TypeWord({
   word,
   currentWordRef,
   myPosition,
   curWordPos,
 }) {
+  const cachedWord = useMemo(() => word, [word])
   const underlineIncorrect = () => {
     if (myPosition < curWordPos) {
       return (
@@ -23,12 +25,12 @@ export default function TypeWord({
   }
   return (
     <StyledTypeWord ref={currentWordRef} underline={underlineIncorrect()}>
-      {word.map((letter) => (
+      {cachedWord.map((letter) => (
         <TypeLetter letter={letter} key={letter.id} />
       ))}
     </StyledTypeWord>
   )
-}
+})
 
 const StyledTypeWord = styled.div`
   display: flex;

@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react"
-import RestartButton from "../components/TypeTest/RestartButton"
+import { useRef, useState } from "react"
 
-export const useCountDown = (): [number[], []] => {
+export const useCountDown = () => {
   const Ref = useRef(null)
   const [timer, setTimer] = useState([])
 

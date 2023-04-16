@@ -1,14 +1,15 @@
 import React from "react"
-import { FEEDBACK } from "../../hooks/useTypeText"
+import { FEEDBACK } from "../../hooks/useTypeTest"
 import styled from "styled-components"
+import { memo } from "react"
 
-export default function TypeLetter({ letter }) {
+export default memo(function TypeLetter({ letter }) {
   return (
     <StyledTypeLetter feedback={letter.feedback}>
       {letter.letter}
     </StyledTypeLetter>
   )
-}
+})
 
 export const StyledTypeLetter = styled.div`
   color: ${({ feedback, theme }) =>

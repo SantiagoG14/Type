@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { motion } from "framer-motion"
 import styled from "styled-components"
 
@@ -8,11 +8,13 @@ export default function Caret({
   curTop,
   restartbuttonfocus,
 }) {
+  const cachedLeft = useMemo(() => curLeft, [curLeft])
+  const cachedTop = useMemo(() => curTop, [curTop])
   return (
     <StyledCaret
       as={motion.div}
       ref={caretRef}
-      animate={{ left: curLeft, top: curTop }}
+      animate={{ left: cachedLeft, top: cachedTop }}
       transition={{ ease: "linear", duration: 0.1 }}
       imgurl={process.env.PUBLIC_URL + "/carrot.png"}
       restartbuttonfocus={restartbuttonfocus}
