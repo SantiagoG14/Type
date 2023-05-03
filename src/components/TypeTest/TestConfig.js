@@ -1,21 +1,11 @@
 import React from "react"
 import styled from "styled-components"
-import { MODES, ACTIONS } from "../../hooks/useTypeTest"
-export default function TestConfig({
-  dispatch,
-  testConfig,
-  resetTimer,
-  appear,
-}) {
+import { MODES } from "../../hooks/useTypeTest"
+export default function TestConfig({ setTestConfig, testConfig, appear }) {
   const handleClick = (testConfig) => {
-    dispatch({
-      type: ACTIONS.SET_TEST_CONFIG,
-      payload: {
-        testConfig: testConfig,
-      },
-    })
-    resetTimer(testConfig.length)
+    setTestConfig(testConfig)
   }
+
   return (
     <ConfigWrapper className="row" appear={appear}>
       {(testConfig.mode === MODES.WORDS || testConfig.mode === MODES.TIME) && (
@@ -40,14 +30,14 @@ export default function TestConfig({
         words
       </ConfigButton>
       <ConfigButton
-        onClick={() =>
-          dispatch({
-            type: ACTIONS.SET_TEST_CONFIG,
-            payload: {
-              testConfig: { mode: MODES.QUOTES, length: testConfig.length },
-            },
-          })
-        }
+      // onClick={() =>
+      //   dispatch({
+      //     type: ACTIONS.SET_TEST_CONFIG,
+      //     payload: {
+      //       testConfig: { mode: MODES.QUOTES, length: testConfig.length },
+      //     },
+      //   })
+      // }
       >
         <span className="material-symbols-outlined">format_quote</span>
         quote

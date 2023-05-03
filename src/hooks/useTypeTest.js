@@ -1,4 +1,4 @@
-import { useReducer, useLayoutEffect, useRef } from "react"
+import { useReducer, useEffect, useRef } from "react"
 import getRandomWordList, { getRandomWord } from "../utils/wordGenerator"
 import { v4 as uuidv4 } from "uuid"
 
@@ -151,7 +151,7 @@ export default function useTypeTest() {
   // calculate wpm and raw wpm every second
   // test passes
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true
 
     if (mounted) {
@@ -170,7 +170,7 @@ export default function useTypeTest() {
 
   // start timer
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true
 
     if (mounted) {
@@ -185,7 +185,46 @@ export default function useTypeTest() {
     }
   }, [state.clp])
 
-  return [state, dispatch, resetTimer, testTimingRef]
+  function nextLetter(key) {
+    dispatch({
+      type: ACTIONS.MOVE_NEXT_LETTER,
+      payload: {
+        word: state.curWordStr,
+        key: key,
+      },
+    })
+  }
+
+  function space() {
+    dispatch({
+      type: ACTIONS.MOVE_NEXT_WORD,
+    })
+  }
+
+  function prevLetter() {
+    dispatch({
+      type: ACTIONS.MOVE_PREV_LETTER,
+    })
+  }
+
+  function restartTest() {
+    dispatch({
+      type: ACTIONS.RESTART_TEST,
+    })
+    resetTimer(state.tc.length)
+  }
+
+  function setTestConfig(testConfig) {
+    dispatch({
+      type: ACTIONS.SET_TEST_CONFIG,
+      payload: {
+        testConfig: testConfig,
+      },
+    })
+    resetTimer(testConfig.length)
+  }
+
+  return [state, nextLetter, space, prevLetter, restartTest, setTestConfig]
 }
 
 // helper functions
@@ -438,7 +477,6 @@ class Algebra {
 
   static updateWpm(s, wpm, rawWpm) {
     const newState = { ...s }
-    // console.log([...newState.rawWpm, rawWpm])
     const newWpm = [...newState.wpm, wpm]
     const newRawWpm = [...newState.rawWpm, rawWpm]
     newState.wpm = newWpm

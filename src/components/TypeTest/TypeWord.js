@@ -1,7 +1,8 @@
 import styled from "styled-components"
 import TypeLetter from "./TypeLetter"
 import { FEEDBACK } from "../../hooks/useTypeTest"
-import { useMemo, memo } from "react"
+import { memo } from "react"
+import { motion } from "framer-motion"
 
 export default memo(function TypeWord({
   word,
@@ -9,7 +10,6 @@ export default memo(function TypeWord({
   myPosition,
   curWordPos,
 }) {
-  const cachedWord = useMemo(() => word, [word])
   const underlineIncorrect = () => {
     if (myPosition < curWordPos) {
       return (
@@ -24,8 +24,16 @@ export default memo(function TypeWord({
     return false
   }
   return (
-    <StyledTypeWord ref={currentWordRef} underline={underlineIncorrect()}>
-      {cachedWord.map((letter) => (
+    <StyledTypeWord
+      ref={currentWordRef}
+      underline={underlineIncorrect()}
+      // as={motion.div}
+      // layout
+      // animate={{ opacity: 1 }}
+      // exit={{ opacity: 0 }}
+      // transition={{ duration: 0.1 }}
+    >
+      {word.map((letter) => (
         <TypeLetter letter={letter} key={letter.id} />
       ))}
     </StyledTypeWord>
@@ -36,10 +44,12 @@ const StyledTypeWord = styled.div`
   display: flex;
   font-size: 1.5rem;
   font-family: ${({ theme }) => theme.font.primary}, sans-serif;
-  text-decoration: ${({ underline }) => (underline ? "underline" : "")};
-  text-decoration-color: ${({ theme }) => theme.colors.incorrect};
-  text-underline-offset: 0.35rem;
   margin-right: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  transition: border 100ms ease-in;
+  border-bottom: ${({ underline, theme }) =>
+    underline
+      ? `solid 2px ${theme.colors.incorrect}`
+      : `solid 2px ${theme.colors.bg}`};
   font-weight: 400;
 `
