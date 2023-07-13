@@ -52,6 +52,8 @@ export default function TypeText() {
         return
       }
 
+      if (isTestOver()) return
+
       const pixelsLeftToTest = testWrapperRect.current.left
       const pixelsTopToTest = testWrapperRect.current.top
       const curWordNode =
@@ -119,22 +121,22 @@ export default function TypeText() {
   }, [restartButtonFocus])
 
   const handleKeydown = (e) => {
-    if (isTestOver()) {
-      return
+    if (!isTestOver()) {
+      if (e.key.length === 1 && e.key !== " ") {
+        setRestartButtonFocus(false)
+        nextLetter(e.key)
+      } else if (e.key === "Backspace") {
+        prevLetter()
+      } else if (e.key === " ") {
+        if (restartButtonFocus) {
+          e.preventDefault()
+          setRestartButtonFocus(false)
+        }
+        space()
+      }
     }
 
-    if (e.key.length === 1 && e.key !== " ") {
-      setRestartButtonFocus(false)
-      nextLetter(e.key)
-    } else if (e.key === "Backspace") {
-      prevLetter()
-    } else if (e.key === " ") {
-      if (restartButtonFocus) {
-        e.preventDefault()
-        setRestartButtonFocus(false)
-      }
-      space()
-    } else if (e.key === "Tab") {
+    if (e.key === "Tab") {
       setRestartButtonFocus(true)
       e.preventDefault()
     }
@@ -148,15 +150,13 @@ export default function TypeText() {
   }
 
   const isTestOver = () => {
-    // if (state.tc.mode === MODES.TIME) {
-    //   return state.timer[0] === 0
-    // }
-    // return (
-    //   state.cwp === state.tt.length - 1 &&
-    //   state.clp === state.tt[state.tt.length].length
-    // )
-
-    return false
+    if (state.tc.mode === MODES.WORDS) {
+      return (
+        state.cwp === state.tt.length - 1 &&
+        state.clp === state.tt[state.cwp].length
+      )
+    }
+    return state.timer[0] === 0
   }
   return (
     <>
@@ -171,56 +171,60 @@ export default function TypeText() {
       />
 
       <StyledWrapper>
-        <TestWrapper ref={testWrapperRef}>
-          <div style={{ display: "flex" }}>
-            <StyledCounter style={{ marginRight: "2rem" }}>
-              {state.tc.mode === MODES.WORDS
-                ? `${state.cwp}/${state.tt.length}`
-                : (state.timer[1] > 0 ? `${state.timer}:` : "") +
-                  (state.timer[2] > 0 ? `${state.timer[2]}:` : "") +
-                  (state.timer[3] > 9
-                    ? `${state.timer[3]}`
-                    : `0${state.timer[3]}`)}
-            </StyledCounter>
-            <StyledCounter>
-              {state.wpm.length !== 0
-                ? Math.floor(state.wpm[state.wpm.length - 1])
-                : "0"}
-            </StyledCounter>
-          </div>
+        {!isTestOver() ? (
+          <TestWrapper ref={testWrapperRef} as={motion.div}>
+            <div style={{ display: "flex" }}>
+              <StyledCounter style={{ marginRight: "2rem" }}>
+                {state.tc.mode === MODES.WORDS
+                  ? `${state.cwp}/${state.tt.length}`
+                  : (state.timer[1] > 0 ? `${state.timer}:` : "") +
+                    (state.timer[2] > 0 ? `${state.timer[2]}:` : "") +
+                    (state.timer[3] > 9
+                      ? `${state.timer[3]}`
+                      : `0${state.timer[3]}`)}
+              </StyledCounter>
+              <StyledCounter>
+                {state.wpm.length !== 0
+                  ? Math.floor(state.wpm[state.wpm.length - 1])
+                  : "0"}
+              </StyledCounter>
+            </div>
 
-          <div style={{ overflow: "hidden" }}>
-            <WordsWrapper
-              ref={wordsWrapperRef}
-              as={motion.div}
-              animate={{ x: 0 }}
-              transition={{ type: "spring", duration: 0.2 }}
-            >
-              {state.tt.map((word, i) => {
-                const key = word
-                  .filter((letter) => letter.feedback !== FEEDBACK.OUT_OF_BND)
-                  .reduce((acc, cur) => acc + cur.id, "")
-                return (
-                  i >= numOfHiddenWords && (
-                    <TypeWord
-                      word={word}
-                      myPosition={i}
-                      curWordPos={state.cwp}
-                      key={key}
-                    />
+            <div style={{ overflow: "hidden" }}>
+              <WordsWrapper ref={wordsWrapperRef}>
+                {state.tt.map((word, i) => {
+                  const key = word
+                    .filter((letter) => letter.feedback !== FEEDBACK.OUT_OF_BND)
+                    .reduce((acc, cur) => acc + cur.id, "")
+                  return (
+                    i >= numOfHiddenWords && (
+                      <TypeWord
+                        word={word}
+                        myPosition={i}
+                        curWordPos={state.cwp}
+                        key={key}
+                      />
+                    )
                   )
-                )
-              })}
-            </WordsWrapper>
-          </div>
+                })}
+              </WordsWrapper>
+            </div>
 
-          <Caret
-            caretRef={caretRef}
-            curLeft={caretLeft}
-            curTop={caretTop}
-            restartbuttonfocus={restartButtonFocus.toString()}
-          />
-        </TestWrapper>
+            <Caret
+              caretRef={caretRef}
+              curLeft={caretLeft}
+              curTop={caretTop}
+              restartbuttonfocus={restartButtonFocus.toString()}
+            />
+          </TestWrapper>
+        ) : (
+          <StyledCounter>
+            <span style={{ marginRight: "1rem" }}>Word per minute:</span>
+            {state.wpm.length !== 0
+              ? Math.floor(state.wpm[state.wpm.length - 1])
+              : "0"}
+          </StyledCounter>
+        )}
 
         <RestartButton
           handleRestartTest={handleRestartTest}
@@ -264,6 +268,7 @@ const StyledWrapper = styled.div`
 const TestWrapper = styled.div`
   position: relative;
   max-width: 58rem;
+  min-width: 58rem;
   position: relative;
 `
 

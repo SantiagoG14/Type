@@ -8,13 +8,13 @@ export default function TestConfig({ setTestConfig, testConfig, appear }) {
 
   return (
     <ConfigWrapper className="row" appear={appear}>
-      {(testConfig.mode === MODES.WORDS || testConfig.mode === MODES.TIME) && (
+      {/* {(testConfig.mode === MODES.WORDS || testConfig.mode === MODES.TIME) && (
         <>
           <ConfigButton>Punctiation</ConfigButton>
           <ConfigButton>Numbers</ConfigButton>
           <Spacer />
         </>
-      )}
+      )} */}
       <ConfigButton
         onClick={() => handleClick({ mode: MODES.TIME, length: 15 })}
         active={testConfig.mode === MODES.TIME}
@@ -29,7 +29,7 @@ export default function TestConfig({ setTestConfig, testConfig, appear }) {
         <span className="material-symbols-outlined">format_italic</span>
         words
       </ConfigButton>
-      <ConfigButton
+      {/* <ConfigButton
       // onClick={() =>
       //   dispatch({
       //     type: ACTIONS.SET_TEST_CONFIG,
@@ -41,7 +41,7 @@ export default function TestConfig({ setTestConfig, testConfig, appear }) {
       >
         <span className="material-symbols-outlined">format_quote</span>
         quote
-      </ConfigButton>
+      </ConfigButton> */}
       <Spacer />
 
       {testConfig.mode === MODES.WORDS ? (

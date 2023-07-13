@@ -1,8 +1,12 @@
 import styled from "styled-components"
-import TypeLetter from "./TypeLetter"
 import { FEEDBACK } from "../../hooks/useTypeTest"
 import { memo } from "react"
-import { motion } from "framer-motion"
+
+const TypeLetter = memo(({ letter }) => (
+  <StyledTypeLetter feedback={letter.feedback}>
+    {letter.letter}
+  </StyledTypeLetter>
+))
 
 export default memo(function TypeWord({
   word,
@@ -52,4 +56,16 @@ const StyledTypeWord = styled.div`
       ? `solid 2px ${theme.colors.incorrect}`
       : `solid 2px ${theme.colors.bg}`};
   font-weight: 400;
+`
+
+export const StyledTypeLetter = styled.div`
+  color: ${({ feedback, theme }) =>
+    feedback === FEEDBACK.CORRECT
+      ? theme.colors.correct
+      : feedback === FEEDBACK.INCORRECT
+      ? theme.colors.incorrect
+      : feedback === FEEDBACK.OUT_OF_BND
+      ? theme.colors.incorrect
+      : theme.colors.notPressed};
+  user-select: none;
 `
