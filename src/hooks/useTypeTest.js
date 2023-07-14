@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useRef } from "react"
+import { useReducer, useEffect, useRef, useState, useLayoutEffect } from "react"
 import getRandomWordList from "../utils/wordGenerator"
 import { Algebra } from "../utils/gameAlgebra"
 
@@ -12,7 +12,6 @@ export const ACTIONS = {
   UPDATE_TIMER: "update-timer",
   START_TEST_TIMING: "start-test-timing",
   END_TEST_TIMING: "end-test-timing",
-  UPDATE_WPM: "update-wpm",
 }
 
 export const FEEDBACK = {
@@ -46,8 +45,6 @@ function reducer(state, action) {
       return Algebra.startTestTiming(state)
     case ACTIONS.END_TEST_TIMING:
       return Algebra.endTestTiming(state)
-    case ACTIONS.UPDATE_WPM:
-      return Algebra.updateWpm(state, action.payload.wpm, action.payload.rawWpm)
     default:
       return state
   }
@@ -56,6 +53,7 @@ function reducer(state, action) {
 export default function useTypeTest() {
   const Ref = useRef(null)
   const testTimingRef = useRef(null)
+  const [wpm, setWpm] = useState([])
   const initialTestConfig = {
     mode: MODES.WORDS,
     length: 25,
@@ -79,6 +77,8 @@ export default function useTypeTest() {
 
   //update timer
 
+  // function to get time remaining for the time mode
+  // this is a countdown timer
   function getTimeRemaining(e) {
     const total = Date.parse(e) - Date.parse(new Date())
     const seconds = Math.floor((total / 1000) % 60)
@@ -92,6 +92,10 @@ export default function useTypeTest() {
     }
   }
 
+  // this is to create a new timer with a certain time
+  // however this does not start the timer, it just sets
+  // a time on the timer, this function is for the countdown
+  // timer not the length of the test
   const startTimer = (e) => {
     let { total, hours, minutes, seconds } = getTimeRemaining(e)
     if (total >= 0) {
@@ -104,6 +108,7 @@ export default function useTypeTest() {
     }
   }
 
+  // clears current timer of countdown
   const clearTimer = (e) => {
     let { total, hours, minutes, seconds } = getTimeRemaining(e)
 
@@ -122,6 +127,10 @@ export default function useTypeTest() {
     Ref.current = id
   }
 
+  // starts the timing for the test
+  // this you us the length of the test to be able to
+  // calculate words per minute and later know the lenght
+  // of the test and such
   const startTestTiming = () => {
     if (testTimingRef.current) clearInterval(testTimingRef.current)
     const id = setInterval(() => {
@@ -131,6 +140,8 @@ export default function useTypeTest() {
     testTimingRef.current = id
   }
 
+  // this functions ends the test timing
+  // and sets it back to -
   const endTestTiming = () => {
     clearInterval(testTimingRef.current)
     dispatch({ type: ACTIONS.END_TEST_TIMING })
@@ -152,24 +163,27 @@ export default function useTypeTest() {
   // test passes
 
   useEffect(() => {
-    let mounted = true
+    // gets words per minute at the certain time in test
+    // returns undefinded if value of wpm is either NaN
+    // or undefined
+    function getWpm(s) {
+      const correct = getCharFeedback(s, FEEDBACK.CORRECT) + s.cwp
+      const newWpm = (correct * (60 / s.timing)) / 5
+      console.log(s.timing, newWpm)
+      if (!newWpm || isNaN(newWpm)) return
+      return newWpm
+    }
 
-    if (mounted) {
-      const wpm = getWpm(state)
-      const rawWpm = getRawWPM(state)
-      if (state.timing === 0) return
-      if (
-        state.cwp === state.tt.length - 1 &&
-        state.clp === state.tt[state.cwp].length
-      )
-        return
-      dispatch({
-        type: ACTIONS.UPDATE_WPM,
-        payload: {
-          wpm: wpm,
-          rawWpm: rawWpm,
-        },
-      })
+    const newWpm = getWpm(state)
+    if (!newWpm) return
+    // const rawWpm = getRawWPM(state)
+
+    setWpm((prev) => [...prev, newWpm])
+  }, [state.timing])
+
+  useEffect(() => {
+    if (state.timer[0] === 0 && isTestDone(state)) {
+      clearInterval(testTimingRef.current)
     }
   }, [state.timing])
 
@@ -178,6 +192,9 @@ export default function useTypeTest() {
   useEffect(() => {
     let mounted = true
 
+    if (isTestDone(state)) {
+      clearInterval(testTimingRef.current)
+    }
     if (mounted) {
       if (state.cwp === 0 && state.clp === 1 && state.tc.mode === MODES.TIME) {
         if (state.timer[0] < state.tc.length * 1000) return
@@ -217,6 +234,7 @@ export default function useTypeTest() {
       type: ACTIONS.RESTART_TEST,
     })
     resetTimer(state.tc.length)
+    setWpm([])
   }
 
   function setTestConfig(testConfig) {
@@ -229,7 +247,14 @@ export default function useTypeTest() {
     resetTimer(testConfig.length)
   }
 
-  return [state, nextLetter, space, prevLetter, restartTest, setTestConfig]
+  return [
+    { ...state, wpm: wpm },
+    nextLetter,
+    space,
+    prevLetter,
+    restartTest,
+    setTestConfig,
+  ]
 }
 
 // helper functions
@@ -257,8 +282,9 @@ function getRawWPM(s) {
   return rawWpm
 }
 
-function getWpm(s) {
-  const correct = getCharFeedback(s, FEEDBACK.CORRECT) + s.cwp
-  const wpm = (correct * (60 / s.timing)) / 5
-  return wpm
+function isTestDone(s) {
+  if (s.tc.mode === MODES.WORDS) {
+    return s.cwp === s.tt.length - 1 && s.clp === s.tt[s.cwp].length
+  }
+  return s.timer[0] === 0
 }

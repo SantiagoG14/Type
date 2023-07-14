@@ -9,7 +9,6 @@ export default function RestartButton({
     <StyledButton
       ref={restartButtonRef}
       onClick={handleRestartTest}
-      // onSubmit={handleRestartTest}
       tabIndex={0}
       onBlur={() => setRestartButtonFocus(false)}
       onMouseDown={() => setRestartButtonFocus(true)}

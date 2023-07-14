@@ -7,6 +7,18 @@ import TestConfig from "./TestConfig"
 import useTypeTest, { MODES } from "../../hooks/useTypeTest"
 import { FEEDBACK } from "../../hooks/useTypeTest"
 import { motion } from "framer-motion"
+import { useTheme } from "styled-components"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js"
+import { Line } from "react-chartjs-2"
 
 export default function TypeText() {
   const caretRef = useRef()
@@ -25,6 +37,7 @@ export default function TypeText() {
   const wordCountTracker = useRef(new Map())
   const [numOfHiddenWords, setNumOfHiddenWords] = useState(0)
   const curRow = useRef(0)
+  const theme = useTheme()
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown)
@@ -41,6 +54,16 @@ export default function TypeText() {
     navBarHeight.current =
       testWrapperRef.current.children[0].getBoundingClientRect().height
   }, [])
+
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+  )
 
   // effect to set the position of caret
 
@@ -158,6 +181,27 @@ export default function TypeText() {
     }
     return state.timer[0] === 0
   }
+
+  const options = {}
+
+  const data = {
+    labels: [...Array(state.wpm.length).keys()],
+    datasets: [
+      {
+        label: "WPM",
+        data: state.wpm,
+        borderColor: "rgb(255, 99, 132)",
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+      },
+      {
+        label: " Raw WPM",
+        data: state.rawWpm,
+        borderColor: "rgb(53, 162, 235)",
+        backgroundColor: "rgba(53, 162, 235, 0.5)",
+      },
+    ],
+  }
+
   return (
     <>
       <TestConfig
@@ -218,12 +262,50 @@ export default function TypeText() {
             />
           </TestWrapper>
         ) : (
-          <StyledCounter>
-            <span style={{ marginRight: "1rem" }}>Word per minute:</span>
-            {state.wpm.length !== 0
-              ? Math.floor(state.wpm[state.wpm.length - 1])
-              : "0"}
-          </StyledCounter>
+          <>
+            <div style={{ height: "12.4rem" }}>
+              <Line
+                datasetIdKey="id"
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        // stepSize: state.wpm[state.wpm.length - 1] / 5,
+                        maxTicksLimit: 5,
+                      },
+                      title: {
+                        display: true,
+                        text: "Words Per Minute",
+                      },
+                    },
+                  },
+                }}
+                data={{
+                  labels: [...Array(state.wpm.length + 1).keys()].filter(
+                    (_, i) => i !== 0
+                  ),
+                  datasets: [
+                    {
+                      id: 1,
+                      label: "WPM",
+                      data: [...state.wpm],
+                      borderColor: theme.colors.correct,
+                      backgroundColor: theme.colors.correct,
+                    },
+                  ],
+                }}
+              />
+            </div>
+            <StyledCounter>
+              <span style={{ marginRight: "1rem" }}>Word per minute:</span>
+              {state.wpm.length !== 0
+                ? Math.floor(state.wpm[state.wpm.length - 1])
+                : "0"}
+            </StyledCounter>
+          </>
         )}
 
         <RestartButton
@@ -246,6 +328,7 @@ const StyledCounter = styled.div`
 
 const StyledWrapper = styled.div`
   min-height: 600px;
+  min-width: 58rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
