@@ -242,6 +242,7 @@ const StyledCounter = styled.div`
 
 const MainActivityWrapper = styled.div`
   width: 80%;
+  max-width: 1300px;
   margin: auto;
 `;
 
@@ -285,7 +286,7 @@ const WordsWrapper = styled.div`
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.7rem;
   transition: top 200ms ease;
   cursor: default;
   pointer-events: none;

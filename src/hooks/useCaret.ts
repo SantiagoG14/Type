@@ -8,8 +8,10 @@ export type UserCaretProps = {
 export function useCaret({ wordsWrapperRef, cwp, clp }: UserCaretProps) {
   const [caretLeft, setCaretLeft] = useState(0);
   const [caretTop, setCaretTop] = useState(0);
+  const [inactive, setInactive] = useState(true);
 
   const updateCaretPosition = () => {
+    setInactive(false)
     if (!wordsWrapperRef.current) return;
 
     // clp - 1 < 0 ? 0 : clp - 1
@@ -36,7 +38,15 @@ export function useCaret({ wordsWrapperRef, cwp, clp }: UserCaretProps) {
 
   useEffect(() => {
     updateCaretPosition();
+
+    const id = setTimeout(() => {
+      setInactive(true);
+    }, 1000);
+
+    return () => {
+      clearTimeout(id);
+    };
   }, [cwp, clp]);
 
-  return { caretLeft, caretTop };
+  return { caretLeft, caretTop, inactive };
 }
