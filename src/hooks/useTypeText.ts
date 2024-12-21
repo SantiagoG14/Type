@@ -1,6 +1,7 @@
-import { useReducer } from "react"
-import getRandomWordList from "../utils/wordGenerator"
-import { useCountDown } from "./useCountdown"
+import { useReducer } from "react";
+import getRandomWordList from "../utils/wordGenerator";
+import { useCountDown } from "./useCountdown";
+import { MODES } from "./useTypeTest";
 
 export const ACTIONS = {
   MOVE_NEXT_LETTER: "move-next-letter",
@@ -9,29 +10,50 @@ export const ACTIONS = {
   MOVE_PREV_WORD: "move-prev-word",
   RESTART_TEST: "restart-test",
   SET_TEST_CONFIG: "set-test-config",
-}
+} as const;
 
 export const FEEDBACK = {
   NOT_PRESSED: "letter-not-pressed",
   CORRECT: "correct-letter-pressed",
   INCORRECT: "incorrect-letter-pressed",
   OUT_OF_BND: "letter-out-of-bounds",
-}
+} as const;
+
+const feedbackValues = Object.values(FEEDBACK);
+const modeValues = Object.values(MODES);
+
+export type Feedback = (typeof feedbackValues)[number];
+export type Modes = (typeof modeValues)[number];
+
+type TestConfig = {
+  mode: Modes;
+  legth: 25;
+};
+
+type Test = Word[];
+
+type Word = Letter[];
+
+type Letter = {
+  id: string;
+  letter: string;
+  feedback: Feedback;
+};
 
 function reducer(state, action) {
   switch (action.type) {
     case ACTIONS.MOVE_NEXT_LETTER:
-      return Algebra.next(action.payload.key, state)
+      return Algebra.next(action.payload.key, state);
     case ACTIONS.MOVE_PREV_LETTER:
-      return Algebra.back(state)
+      return Algebra.back(state);
     case ACTIONS.MOVE_NEXT_WORD:
-      return Algebra.space(state)
+      return Algebra.space(state);
     case ACTIONS.RESTART_TEST:
-      return Algebra.restart(state)
+      return Algebra.restart(state);
     case ACTIONS.SET_TEST_CONFIG:
-      return Algebra.setConfig(action.payload.testConfig)
+      return Algebra.setConfig(action.payload.testConfig);
     default:
-      return state
+      return state;
   }
 }
 
@@ -40,7 +62,7 @@ export default function useTypeText() {
   const initialTestConfig = {
     type: "words",
     length: 25,
-  }
+  };
   const [state, dispatch] = useReducer(
     reducer,
     new State(
@@ -48,11 +70,11 @@ export default function useTypeText() {
       0,
       0,
       initialTestConfig,
-      useCountDown()
-    )
-  )
+      useCountDown(),
+    ),
+  );
 
-  return [state, dispatch]
+  return [state, dispatch];
 }
 
 class State {
@@ -60,36 +82,40 @@ class State {
   // cwp = current word position
   // clp = current letter position
   // tc = test config
+  tt: Test;
+  cwp: number;
+  clp: number;
+  tc: TestConfig
 
-  constructor(tt, cwp, clp, tc, timer) {
-    this.tt = tt
-    this.cwp = cwp
-    this.clp = clp
-    this.tc = tc
-    this.timer = timer
+  constructor(tt: Test, cwp: number, clp: number, tc, timer) {
+    this.tt = tt;
+    this.cwp = cwp;
+    this.clp = clp;
+    this.tc = tc;
+    this.timer = timer;
   }
 
   get currentWord() {
-    return this.tt[this.cwp]
+    return this.tt[this.cwp];
   }
 
   get testStarted() {
-    return this.clp > 1 || this.cwp > 1
+    return this.clp > 1 || this.cwp > 1;
   }
 
   get currentWordStr() {
-    const wordArr = this.currentWord
-    let word = ""
-    wordArr.forEach((letterObj) => (word += letterObj.letter))
-    return word
+    const wordArr = this.currentWord;
+    let word = "";
+    wordArr.forEach((letterObj) => (word += letterObj.letter));
+    return word;
   }
 
   get uncorrectedErrors() {
     return this.tt.filter(
       (word) =>
         word.feedback === FEEDBACK.INCORRECT ||
-        word.feedback === FEEDBACK.OUT_OF_BND
-    )
+        word.feedback === FEEDBACK.OUT_OF_BND,
+    );
   }
 
   get inbound() {
@@ -97,34 +123,34 @@ class State {
       this.clp <
       this.tt[this.cwp].filter((obj) => obj.feedback !== FEEDBACK.OUT_OF_BND)
         .length
-    )
+    );
   }
 
   get prevIsPerfect() {
     return this.cwp - 1 < 0
       ? false
-      : this.tt[this.cwp - 1].every((obj) => obj.feedback === FEEDBACK.CORRECT)
+      : this.tt[this.cwp - 1].every((obj) => obj.feedback === FEEDBACK.CORRECT);
   }
   replaceCur(f) {
     return this.tt.map((word, i) => {
       return word.map((obj, j) => {
-        return i === this.cwp && j === this.clp ? f(word, obj) : obj
-      })
-    })
+        return i === this.cwp && j === this.clp ? f(word, obj) : obj;
+      });
+    });
   }
 
   replacePrev(f) {
     return this.tt.map((word, i) => {
       return word.map((obj, j) => {
-        return i === this.cwp && j === this.clp - 1 ? f(word, obj) : obj
-      })
-    })
+        return i === this.cwp && j === this.clp - 1 ? f(word, obj) : obj;
+      });
+    });
   }
 
   removePrev() {
     return this.tt.map((word, i) =>
-      i === this.cwp ? word.filter((obj, j) => j !== word.length - 1) : word
-    )
+      i === this.cwp ? word.filter((obj, j) => j !== word.length - 1) : word,
+    );
   }
 }
 
@@ -136,12 +162,12 @@ class Algebra {
         return {
           feedback: obj.letter === l ? FEEDBACK.CORRECT : FEEDBACK.INCORRECT,
           letter: obj.letter,
-        }
-      })
-      return new State(newtt, s.cwp, s.clp + 1, s.tc)
+        };
+      });
+      return new State(newtt, s.cwp, s.clp + 1, s.tc);
     }
     // outbound
-    if (s.tt[s.cwp].length === 24) return s
+    if (s.tt[s.cwp].length === 24) return s;
     const newtt = s.tt.map((wordArr, i) => {
       if (i === s.cwp) {
         return [
@@ -150,28 +176,28 @@ class Algebra {
             feedback: FEEDBACK.OUT_OF_BND,
             letter: l,
           },
-        ]
+        ];
       }
-      return wordArr
-    })
-    return new State(newtt, s.cwp, s.clp + 1, s.tc)
+      return wordArr;
+    });
+    return new State(newtt, s.cwp, s.clp + 1, s.tc);
   }
 
   static back(s) {
-    if (s.clp === 0 && s.cwp === 0) return s
+    if (s.clp === 0 && s.cwp === 0) return s;
 
     if (s.clp === 0 && s.cwp > 0) {
       return s.prevIsPerfect
         ? s
         : new State(
-            s.tt,
-            s.cwp - 1,
-            s.tt[s.cwp - 1].length -
-              s.tt[s.cwp - 1].filter(
-                (obj) => obj.feedback === FEEDBACK.NOT_PRESSED
-              ).length,
-            s.tc
-          )
+          s.tt,
+          s.cwp - 1,
+          s.tt[s.cwp - 1].length -
+          s.tt[s.cwp - 1].filter(
+            (obj) => obj.feedback === FEEDBACK.NOT_PRESSED,
+          ).length,
+          s.tc,
+        );
     }
 
     //inboud
@@ -184,27 +210,27 @@ class Algebra {
         return {
           feedback: FEEDBACK.NOT_PRESSED,
           letter: obj.letter,
-        }
-      })
-      return new State(newtt, s.cwp, s.clp - 1, s.tc)
+        };
+      });
+      return new State(newtt, s.cwp, s.clp - 1, s.tc);
     }
 
     //outbound
-    const newtt = s.removePrev()
-    return new State(newtt, s.cwp, s.clp - 1, s.tc)
+    const newtt = s.removePrev();
+    return new State(newtt, s.cwp, s.clp - 1, s.tc);
   }
   static space(s) {
     if (s.clp > 0 && s.cwp < s.tt.length) {
-      return new State(s.tt, s.cwp + 1, 0, s.tc)
+      return new State(s.tt, s.cwp + 1, 0, s.tc);
     }
-    return s
+    return s;
   }
 
   static restart(s) {
-    return new State(getRandomWordList(s.tc.length), 0, 0, s.tc)
+    return new State(getRandomWordList(s.tc.length), 0, 0, s.tc);
   }
 
   static setConfig(tc) {
-    return new State(getRandomWordList(tc.length), 0, 0, tc)
+    return new State(getRandomWordList(tc.length), 0, 0, tc);
   }
 }

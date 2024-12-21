@@ -1,22 +1,23 @@
-import React from "react"
-import styled from "styled-components"
-import { ACTIONS } from "../../hooks/useTypeText"
-import { MODES } from "../../hooks/useTypeTest"
-export default function TestConfig({
-  dispatch,
+import styled from "styled-components";
+import { MODES, TestConfigT } from "../../hooks/useTypeTest";
+import { memo } from "react";
+import { Dispatch } from "react";
+
+const TestConfig = memo(function TestConfig({
   testConfig,
+  setTestConfig,
   resetTimer,
   appear,
+}: {
+  testConfig: TestConfigT;
+  setTestConfig: Dispatch<React.SetStateAction<TestConfigT>>;
+  appear: boolean;
+  resetTimer: () => void;
 }) {
-  const handleClick = (testConfig) => {
-    dispatch({
-      type: ACTIONS.SET_TEST_CONFIG,
-      payload: {
-        testConfig: testConfig,
-      },
-    })
-    resetTimer(testConfig.length)
-  }
+  const handleClick = (testConfig: TestConfigT) => {
+    setTestConfig(testConfig);
+    resetTimer();
+  };
   return (
     <ConfigWrapper className="row" appear={appear}>
       {(testConfig.mode === MODES.WORDS || testConfig.mode === MODES.TIME) && (
@@ -40,12 +41,7 @@ export default function TestConfig({
       </ConfigButton>
       <ConfigButton
         onClick={() =>
-          dispatch({
-            type: ACTIONS.SET_TEST_CONFIG,
-            payload: {
-              testConfig: { mode: MODES.QUOTES, length: testConfig.length },
-            },
-          })
+          handleClick({ mode: MODES.QUOTES, length: testConfig.length })
         }
       >
         quote
@@ -58,10 +54,15 @@ export default function TestConfig({
         <TimerLengthOption handleClick={handleClick} testConfig={testConfig} />
       )}
     </ConfigWrapper>
-  )
-}
+  );
+});
 
-function WordLengthOptions({ handleClick, testConfig }) {
+type ConfigOptionsProps = {
+  handleClick: (config: TestConfigT) => void;
+  testConfig: TestConfigT;
+};
+
+function WordLengthOptions({ handleClick, testConfig }: ConfigOptionsProps) {
   return (
     <>
       <ConfigButton
@@ -89,10 +90,10 @@ function WordLengthOptions({ handleClick, testConfig }) {
         100
       </ConfigButton>
     </>
-  )
+  );
 }
 
-function TimerLengthOption({ handleClick, testConfig }) {
+function TimerLengthOption({ handleClick, testConfig }: ConfigOptionsProps) {
   return (
     <>
       <ConfigButton
@@ -121,10 +122,12 @@ function TimerLengthOption({ handleClick, testConfig }) {
         120
       </ConfigButton>
     </>
-  )
+  );
 }
 
-const ConfigWrapper = styled.div`
+export default TestConfig
+
+const ConfigWrapper = styled.div<{ appear?: boolean }>`
   background-color: #ececec;
   border-radius: 0.5rem;
   display: flex;
@@ -134,10 +137,11 @@ const ConfigWrapper = styled.div`
   padding: 1.5rem;
   opacity: ${({ appear }) => (appear ? "1" : "0")};
   transition: opacity 200ms ease-out;
-  /* margin-bottom: 5rem; */
-`
+  max-width: fit-content;
+  margin: auto
+`;
 
-const ConfigButton = styled.div`
+const ConfigButton = styled.div<{ active?: boolean }>`
   padding: 1rem;
   color: ${({ theme, active }) =>
     active ? theme.colors.main : theme.colors.notPressed};
@@ -149,7 +153,7 @@ const ConfigButton = styled.div`
   &:hover {
     color: ${({ theme }) => theme.colors.correct};
   }
-`
+`;
 
 const Spacer = styled.div`
   height: 2rem;
@@ -157,4 +161,4 @@ const Spacer = styled.div`
   padding: 0.15rem;
   border-radius: 0.5rem;
   background-color: grey;
-`
+`;

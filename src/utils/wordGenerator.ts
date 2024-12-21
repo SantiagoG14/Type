@@ -1,4 +1,4 @@
-import { FEEDBACK } from "../hooks/useTypeText"
+import { Feedback, FEEDBACK } from "../hooks/useTypeText"
 import { v4 as uuidv4 } from "uuid"
 
 export function getRandomWord() {
@@ -6,7 +6,7 @@ export function getRandomWord() {
   return getLettersArray(mostCommon200[randomIndex], FEEDBACK.NOT_PRESSED)
 }
 
-function getLettersArray(strWord, feedback) {
+function getLettersArray(strWord: string, feedback: Feedback) {
   return strWord.split("").map((l) => {
     return {
       letter: l,
@@ -16,7 +16,7 @@ function getLettersArray(strWord, feedback) {
   })
 }
 
-export default function getRandomWordList(length) {
+export default function getRandomWordList(length: number) {
   const newArray = Array.apply(null, Array(length)).map((_) => getRandomWord())
   return newArray
 }
