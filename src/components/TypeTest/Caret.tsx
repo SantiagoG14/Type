@@ -1,26 +1,24 @@
 import { motion } from "framer-motion";
 import styled from "styled-components";
 import CaretUrl from "../../assets/carrot.png";
-import { ComponentProps, forwardRef } from "react";
-import { useCaret, UserCaretProps } from "../../hooks/useCaret";
+import { forwardRef } from "react";
 
-const Caret = forwardRef<HTMLDivElement, UserCaretProps>(function Caret(
-  { clp, cwp, wordsWrapperRef },
+type CaretProps = {
+  caretLeft: number;
+  caretTop: number;
+  inactive: boolean;
+};
+
+const Caret = forwardRef<HTMLDivElement, CaretProps>(function Caret(
+  { caretTop, caretLeft, inactive },
   ref,
 ) {
-  const { caretTop, caretLeft, inactive } = useCaret({
-    cwp,
-    clp,
-    wordsWrapperRef,
-  });
-
   return (
     <StyledCaret
       as={motion.div}
       ref={ref}
       animate={{ x: caretLeft, y: caretTop }}
       transition={{ ease: "linear", duration: 0.1 }}
-      ina
     >
       <CaretImg src={CaretUrl} height={28} width={6} inactive={inactive} />
     </StyledCaret>
@@ -44,7 +42,7 @@ const CaretImg = styled.img<{ inactive: boolean }>`
     100% {
       opacity: 1;
     }
-  }
+  o
 `;
 
 const StyledCaret = styled.div`

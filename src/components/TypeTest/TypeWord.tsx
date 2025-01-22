@@ -1,8 +1,8 @@
 import { memo, useCallback } from "react";
 import styled from "styled-components";
 import TypeLetter from "./TypeLetter";
-import { FEEDBACK } from "../../hooks/useTypeText";
-import { Word } from "../../hooks/useTypeTest";
+import { Word, FEEDBACK } from "@/hooks/useTypeTest";
+
 
 type TypeWordProps = { word: Word; position: number; curWordPos: number };
 const Typeword = memo(function TypeWord({
@@ -54,6 +54,8 @@ export default Typeword;
 const StyledTypeWord = styled.div<{ underline: boolean }>`
   display: flex;
   font-size: 1.5rem;
+  padding-bottom: 0.7rem;
+  padding-right: 0.7rem;
   font-family: ${({ theme }) => theme.font.primary}, sans-serif;
   text-decoration: ${({ underline }) => (underline ? "underline" : "")};
   text-decoration-color: ${({ theme }) => theme.colors.incorrect};

@@ -1,6 +1,5 @@
-import { FEEDBACK } from "../../hooks/useTypeText";
 import styled from "styled-components";
-import { Feedback, Letter } from "../../hooks/useTypeTest";
+import { Feedback, Letter, FEEDBACK } from "@/hooks/useTypeTest";
 import { memo } from "react";
 
 const TypeLetter = memo(function TypeLetter({ letter }: { letter: Letter }) {

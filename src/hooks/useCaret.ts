@@ -1,17 +1,24 @@
-import { useState, MutableRefObject, useLayoutEffect, useEffect } from "react";
+import { useState, MutableRefObject, useEffect, useCallback, useRef } from "react";
 
 export type UserCaretProps = {
   wordsWrapperRef: MutableRefObject<null | HTMLDivElement>;
   cwp: number;
   clp: number;
+  wordTop: number;
 };
-export function useCaret({ wordsWrapperRef, cwp, clp }: UserCaretProps) {
+export function useCaret({
+  wordsWrapperRef,
+  cwp,
+  clp,
+  wordTop,
+}: UserCaretProps) {
   const [caretLeft, setCaretLeft] = useState(0);
   const [caretTop, setCaretTop] = useState(0);
   const [inactive, setInactive] = useState(true);
+  const heightsRef = useRef<number[]>([])
 
-  const updateCaretPosition = () => {
-    setInactive(false)
+  const updateCaretPosition = useCallback(() => {
+    setInactive(false);
     if (!wordsWrapperRef.current) return;
 
     // clp - 1 < 0 ? 0 : clp - 1
@@ -23,11 +30,13 @@ export function useCaret({ wordsWrapperRef, cwp, clp }: UserCaretProps) {
     const sideOfLetter = clp - 1 < 0 ? letterRect.left : letterRect.right;
     setCaretLeft(sideOfLetter);
 
-    setCaretTop(() => {
-      // height to top + height of box + height of caret
-      return letterRect.top;
-    });
-  };
+    setCaretTop((prev) => {
+      console.log(wordTop, prev, letterRect.top)
+      return letterRect.top
+    })
+  }, [cwp, clp, wordTop]);
+
+
 
   // update caret position when window is resized
   useEffect(() => {
@@ -41,12 +50,12 @@ export function useCaret({ wordsWrapperRef, cwp, clp }: UserCaretProps) {
 
     const id = setTimeout(() => {
       setInactive(true);
-    }, 1000);
+    }, 500);
 
     return () => {
       clearTimeout(id);
     };
-  }, [cwp, clp]);
+  }, [cwp, clp, wordTop]);
 
-  return { caretLeft, caretTop, inactive };
+  return { caretLeft, caretTop, inactive, updateCaretPosition };
 }

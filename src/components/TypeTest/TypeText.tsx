@@ -1,12 +1,12 @@
 import {
   useEffect,
   useRef,
-  useLayoutEffect,
   useState,
   forwardRef,
   PropsWithChildren,
   memo,
   useCallback,
+  useLayoutEffect,
 } from "react";
 import Caret from "./Caret";
 import TypeWord from "./TypeWord";
@@ -17,10 +17,12 @@ import useTypeTest, {
   ACTIONS,
   Modes,
   MODES,
-  TestConfigT,
   Timer,
-} from "../../hooks/useTypeTest";
-import { useTestTime } from "../../hooks/useTestTiming";
+  TestConfigT,
+} from "@/hooks/useTypeTest";
+import { useTestTime } from "@/hooks/useTestTiming";
+import { useSavedState } from "@/hooks/useSavedState";
+import { useCaret } from "@/hooks/useCaret";
 
 const initialTestConfig = {
   mode: MODES.WORDS,
@@ -32,14 +34,15 @@ export default function TypeText() {
   const restartButtonRef = useRef<HTMLButtonElement>(null);
   const wordsWrapperRef = useRef<HTMLDivElement>(null);
   const [restartButtonFocus, setRestartButtonFocus] = useState(false);
-  const [state, dispatch] = useTypeTest();
-  const { startTestTiming, timer, wpm, duration, resetTimer } =
-    useTestTime(state);
-  const caretCol = useRef(-1);
-  const wordCountTracker = useRef(new Map());
-  const [numOfHiddenWords, setNumOfHiddenWords] = useState(0);
 
-  const [tc, setTc] = useState<TestConfigT>(initialTestConfig);
+  const [tc, setTc] = useSavedState<TestConfigT>(
+    "testConfig",
+    initialTestConfig,
+  );
+  const [state, dispatch] = useTypeTest(tc);
+
+  const { startTestTiming, timer, wpm, duration, resetTimer, clearTestTimer } =
+    useTestTime(state);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown);
@@ -71,6 +74,45 @@ export default function TypeText() {
     };
   }, [caretTop]); */
 
+  const curWordDy = useRef({ prevDy: 0, count: 0 });
+  const wordScrollRef = useRef<HTMLDivElement>(null);
+  const [wordsTop, setWordsTop] = useState(0);
+
+  const { caretTop, caretLeft, inactive, updateCaretPosition } = useCaret({
+    cwp: state.cwp,
+    clp: state.clp,
+    wordsWrapperRef,
+    wordTop: wordsTop,
+  });
+
+  useEffect(() => {
+    const height = wordScrollRef.current?.getBoundingClientRect().height;
+    const firstWord = wordsWrapperRef.current?.children[0];
+    const curWord = wordsWrapperRef.current?.children[state.cwp];
+    if (!firstWord) return;
+    if (!curWord) return;
+    if (!height) return;
+
+    const dy =
+      curWord?.getBoundingClientRect().y -
+      wordScrollRef.current?.getBoundingClientRect().y;
+
+    if (dy > curWordDy.current.prevDy) {
+      curWordDy.current = {
+        prevDy: dy,
+        count: curWordDy.current.count + 1,
+      };
+    }
+
+    if (curWordDy.current.count === 2) {
+      setWordsTop((prev) => prev + firstWord.getBoundingClientRect().height);
+      curWordDy.current = {
+        count: 0,
+        prevDy: 0,
+      };
+    }
+  }, [state.cwp]);
+
   useEffect(() => {
     if (!restartButtonRef.current) return;
 
@@ -87,8 +129,8 @@ export default function TypeText() {
 
     // start timing as soon as move letters
     if (res && state.cwp === 0 && state.clp === 1) {
-      if (state.tc.mode === MODES.TIME) {
-        //clearTestTimer();
+      if (tc.mode === MODES.TIME) {
+        clearTestTimer();
       }
       startTestTiming();
     }
@@ -118,11 +160,9 @@ export default function TypeText() {
 
   const handleRestartTest = useCallback(() => {
     dispatch({ type: ACTIONS.RESTART_TEST });
+    setWordsTop(0);
     setRestartButtonFocus(false);
     resetTimer();
-    caretCol.current = -1;
-    wordCountTracker.current = new Map();
-    setNumOfHiddenWords(0);
   }, []);
 
   const isTestOver = () => {
@@ -156,24 +196,25 @@ export default function TypeText() {
           mode={state.tc.mode}
         />
 
-        <Words
-          ref={wordsWrapperRef}
-          cwp={state.cwp}
-          numOfHiddenWords={numOfHiddenWords}
-        >
-          {state.tt.map((word, i) => {
-            return (
-              i >= numOfHiddenWords && (
+        <WordsWrapperScroll ref={wordScrollRef}>
+          <Words
+            ref={wordsWrapperRef}
+            cwp={state.cwp}
+            top={wordsTop}
+            onTrasitionEnd={() => {}}
+          >
+            {state.tt.map((word, i) => {
+              return (
                 <TypeWord
                   word={word}
                   position={i}
                   curWordPos={state.cwp}
                   key={i}
                 />
-              )
-            );
-          })}
-        </Words>
+              );
+            })}
+          </Words>
+        </WordsWrapperScroll>
       </MainActivityWrapper>
 
       <RestartButton
@@ -182,24 +223,27 @@ export default function TypeText() {
         setRestartButtonFocus={setRestartButtonFocus}
       />
 
-      <Caret
-        wordsWrapperRef={wordsWrapperRef}
-        ref={caretRef}
-        clp={state.clp}
-        cwp={state.cwp}
-      />
+      <Caret caretLeft={caretLeft} caretTop={caretTop} inactive={inactive} />
     </TestWrapper>
   );
 }
 
 type WordsProps = PropsWithChildren & {
   cwp: number;
-  numOfHiddenWords: number;
+  top: number;
+  onTrasitionEnd: () => void;
 };
 
 const Words = memo(
-  forwardRef<HTMLDivElement, WordsProps>(function Words({ children }, ref) {
-    return <WordsWrapper ref={ref}>{children}</WordsWrapper>;
+  forwardRef<HTMLDivElement, WordsProps>(function Words(
+    { children, top, onTrasitionEnd },
+    ref,
+  ) {
+    return (
+      <WordsWrapper ref={ref} top={top} onTransitionEnd={onTrasitionEnd}>
+        {children}
+      </WordsWrapper>
+    );
   }),
 );
 
@@ -241,7 +285,7 @@ const StyledCounter = styled.div`
 `;
 
 const MainActivityWrapper = styled.div`
-  width: 80%;
+  width: 10%;
   max-width: 1300px;
   margin: auto;
 `;
@@ -279,18 +323,26 @@ const TestWrapper_ = forwardRef<HTMLDivElement, Props>(({ children }, ref) => {
 const TestWrapper = styled.div`
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 2rem;
 `;
 
-const WordsWrapper = styled.div`
+const WordsWrapperScroll = styled.div`
+  width: 100%;
+  height: 125.1428604125977px;
+  position: relative;
+  pointer-events: none;
+  overflow: hidden;
+`;
+
+const WordsWrapper = styled.div<{ top: number }>`
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-  gap: 0.7rem;
-  transition: top 200ms ease;
+  transition: top 100ms ease;
+  position: absolute;
+  left: 0;
+  top: -${({ top }) => top}px;
   cursor: default;
-  pointer-events: none;
-  overflow: hidden;
   align-content: flex-start;
-  height: 125.1428604125977px;
 `;

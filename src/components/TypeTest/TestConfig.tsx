@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { MODES, TestConfigT } from "../../hooks/useTypeTest";
 import { memo } from "react";
-import { Dispatch } from "react";
 
 const TestConfig = memo(function TestConfig({
   testConfig,
@@ -10,7 +9,7 @@ const TestConfig = memo(function TestConfig({
   appear,
 }: {
   testConfig: TestConfigT;
-  setTestConfig: Dispatch<React.SetStateAction<TestConfigT>>;
+  setTestConfig: (newTc: TestConfigT) => void
   appear: boolean;
   resetTimer: () => void;
 }) {

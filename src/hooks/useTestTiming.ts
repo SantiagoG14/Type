@@ -17,9 +17,9 @@ export function useTestTime(testState: AppState) {
     });
   }, [duration]);
 
-  const testDuration = useRef<number | null>(null);
+  const testDuration = useRef<NodeJS.Timeout | null>(null);
 
-  const testTimer = useRef<number | null>(null);
+  const testTimer = useRef<NodeJS.Timeout | null>(null);
 
   // total is in milliseconds
   function getTimeRemaining() {

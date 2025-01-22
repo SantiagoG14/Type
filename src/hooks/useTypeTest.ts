@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import getRandomWordList, { getRandomWord } from "../utils/wordGenerator";
 import { v4 as uuidv4 } from "uuid";
 
@@ -93,7 +93,7 @@ function reducer(state: AppState, action: ReducerAction): AppState {
   }
 }
 
-export default function useTypeTest() {
+export default function useTypeTest(tc: TestConfigT) {
   const initialTestConfig = {
     mode: MODES.WORDS,
     length: 25,
@@ -108,8 +108,12 @@ export default function useTypeTest() {
     tt: getRandomWordList(initialTestConfig.length),
     cwp: 0,
     clp: 0,
-    tc: initialTestConfig,
+    tc,
   } satisfies AppState);
+
+  useEffect(() => {
+    dispatch({ type: ACTIONS.SET_TEST_CONFIG, payload: { testConfig: tc } });
+  }, [tc]);
 
   return [state, dispatch] as const;
 }
