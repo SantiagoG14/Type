@@ -94,18 +94,13 @@ function reducer(state: AppState, action: ReducerAction): AppState {
 }
 
 export default function useTypeTest(tc: TestConfigT) {
-  const initialTestConfig = {
-    mode: MODES.WORDS,
-    length: 25,
-  };
-
   // tt = type text
   // cwp = current word position
   // clp = current letter possition
   // tc = test config
 
   const [state, dispatch] = useReducer(reducer, {
-    tt: getRandomWordList(initialTestConfig.length),
+    tt: getRandomWordList(tc.length),
     cwp: 0,
     clp: 0,
     tc,

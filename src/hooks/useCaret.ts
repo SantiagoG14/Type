@@ -1,52 +1,62 @@
-import { useState, MutableRefObject, useEffect, useCallback, useRef } from "react";
+import {
+  useState,
+  MutableRefObject,
+  useEffect,
+  useCallback,
+} from "react";
 
 export type UserCaretProps = {
   wordsWrapperRef: MutableRefObject<null | HTMLDivElement>;
   cwp: number;
   clp: number;
-  wordTop: number;
 };
 export function useCaret({
   wordsWrapperRef,
   cwp,
   clp,
-  wordTop,
 }: UserCaretProps) {
   const [caretLeft, setCaretLeft] = useState(0);
   const [caretTop, setCaretTop] = useState(0);
   const [inactive, setInactive] = useState(true);
-  const heightsRef = useRef<number[]>([])
 
-  const updateCaretPosition = useCallback(() => {
-    setInactive(false);
+  function updateCaretX() {
+    const curLetterRect = getCurLetterRect();
+
+    if (!curLetterRect) return;
+
+    const sideOfLetter = clp - 1 < 0 ? curLetterRect.left : curLetterRect.right;
+    setCaretLeft(sideOfLetter);
+  }
+
+  function updateCaretY() {
+    const curLetterRect = getCurLetterRect();
+
+    if (!curLetterRect) return;
+
+    setCaretTop(curLetterRect.top);
+  }
+
+  function getCurLetterRect() {
     if (!wordsWrapperRef.current) return;
 
     // clp - 1 < 0 ? 0 : clp - 1
     //  ? left side : right side of letter
     const curLetterNode =
       wordsWrapperRef.current.children[cwp].children[clp - 1 < 0 ? 0 : clp - 1];
-    if (!curLetterNode) return;
+
     const letterRect = curLetterNode.getBoundingClientRect();
-    const sideOfLetter = clp - 1 < 0 ? letterRect.left : letterRect.right;
-    setCaretLeft(sideOfLetter);
-
-    setCaretTop((prev) => {
-      console.log(wordTop, prev, letterRect.top)
-      return letterRect.top
-    })
-  }, [cwp, clp, wordTop]);
-
-
+    return letterRect;
+  }
 
   // update caret position when window is resized
   useEffect(() => {
-    window.addEventListener("resize", updateCaretPosition);
+    window.addEventListener("resize", updateCaretX);
 
-    return () => window.removeEventListener("resize", updateCaretPosition);
+    return () => window.removeEventListener("resize", updateCaretX);
   });
 
   useEffect(() => {
-    updateCaretPosition();
+    setInactive(false);
 
     const id = setTimeout(() => {
       setInactive(true);
@@ -55,7 +65,7 @@ export function useCaret({
     return () => {
       clearTimeout(id);
     };
-  }, [cwp, clp, wordTop]);
+  }, [cwp, clp]);
 
-  return { caretLeft, caretTop, inactive, updateCaretPosition };
+  return { caretLeft, caretTop, inactive, updateCaretX, updateCaretY };
 }
