@@ -50,9 +50,13 @@ export function useCaret({
 
   // update caret position when window is resized
   useEffect(() => {
-    window.addEventListener("resize", updateCaretX);
+    const updateCaret = () => {
+      updateCaretX()
+      updateCaretY()
+    }
+    window.addEventListener("resize", updateCaret);
 
-    return () => window.removeEventListener("resize", updateCaretX);
+    return () => window.removeEventListener("resize", updateCaret);
   });
 
   useEffect(() => {
