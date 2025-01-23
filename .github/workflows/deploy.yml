@@ -17,35 +17,36 @@ concurrency:
 
 jobs:
   deploy: 
-    environment: github-pages
-    url: ${{ steps.deployment.outputs.page_url }}
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Set up Node
-      uses: actions/setup-node@v4
-      with: 
-        node-version: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with: 
+          node-version: 20
 
-    - name: Set up pnpm
-      uses: pnpm/action-setup@v3
-      with: 
-        version: 9
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with: 
+          version: 9
 
-    - name: Install dependencies
-      run: pnpm ci
+      - name: Install dependencies
+        run: pnpm ci
 
-    - name: Build
-      run: pnpm run build
+      - name: Build
+        run: pnpm run build
 
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with: 
-        path: "./dist"
-    - name: Deploy to Github Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with: 
+          path: "./dist"
+      - name: Deploy to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
