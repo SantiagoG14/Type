@@ -25,12 +25,6 @@ function App() {
       <ThemeProvider theme={theme}>
         <GlobalStyles />
         <TypeText />
-        {/* <h2>{seconds}</h2>
-        <button onClick={() => newTimer(10)}>35 seconds</button>
-        <button onClick={() => newTimer(0)}>resetTimer</button>
-        <button onClick={() => clearNewTimer(10)}>start</button>
-
-        <div>{total === 0 ? "test over" : "test going"}</div> */}
       </ThemeProvider>
     </div>
   );

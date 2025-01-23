@@ -6,7 +6,6 @@ import {
   PropsWithChildren,
   memo,
   useCallback,
-  useLayoutEffect,
 } from "react";
 import Caret from "./Caret";
 import TypeWord from "./TypeWord";
@@ -30,7 +29,6 @@ const initialTestConfig = {
 };
 
 export default function TypeText() {
-  const caretRef = useRef<HTMLDivElement>(null);
   const restartButtonRef = useRef<HTMLButtonElement>(null);
   const wordsWrapperRef = useRef<HTMLDivElement>(null);
   const [restartButtonFocus, setRestartButtonFocus] = useState(false);
@@ -51,39 +49,16 @@ export default function TypeText() {
     };
   }, [state]);
 
-  // effect to scroll the text down when the test has more then three lines
-  /*
-  useLayoutEffect(() => {
-    let mounted = true;
-
-    if (mounted) {
-      if (caretLeft === -3) {
-        caretCol.current = caretCol.current + 1;
-        wordCountTracker.current.set(caretCol.current, state.cwp);
-        console.log(caretCol, wordCountTracker);
-
-        if (caretCol.current === 2) {
-          setNumOfHiddenWords(wordCountTracker.current.get(1));
-          caretCol.current = 0;
-        }
-      }
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [caretTop]); */
-
   const curWordDy = useRef({ prevDy: 0, count: 0 });
   const wordScrollRef = useRef<HTMLDivElement>(null);
   const [wordsTop, setWordsTop] = useState(0);
 
-  const { caretTop, caretLeft, inactive, updateCaretPosition } = useCaret({
-    cwp: state.cwp,
-    clp: state.clp,
-    wordsWrapperRef,
-    wordTop: wordsTop,
-  });
+  const { caretTop, caretLeft, inactive, updateCaretX, updateCaretY } =
+    useCaret({
+      cwp: state.cwp,
+      clp: state.clp,
+      wordsWrapperRef,
+    });
 
   useEffect(() => {
     const height = wordScrollRef.current?.getBoundingClientRect().height;
@@ -104,6 +79,10 @@ export default function TypeText() {
       };
     }
 
+    if (curWordDy.current.count < 2) {
+      updateCaretY();
+    }
+
     if (curWordDy.current.count === 2) {
       setWordsTop((prev) => prev + firstWord.getBoundingClientRect().height);
       curWordDy.current = {
@@ -112,6 +91,10 @@ export default function TypeText() {
       };
     }
   }, [state.cwp]);
+
+  useEffect(() => {
+    updateCaretX();
+  }, [state.clp]);
 
   useEffect(() => {
     if (!restartButtonRef.current) return;
@@ -159,8 +142,9 @@ export default function TypeText() {
   };
 
   const handleRestartTest = useCallback(() => {
-    dispatch({ type: ACTIONS.RESTART_TEST });
+    if (!wordsWrapperRef.current) return;
     setWordsTop(0);
+    dispatch({ type: ACTIONS.RESTART_TEST });
     setRestartButtonFocus(false);
     resetTimer();
   }, []);
@@ -201,7 +185,10 @@ export default function TypeText() {
             ref={wordsWrapperRef}
             cwp={state.cwp}
             top={wordsTop}
-            onTrasitionEnd={() => {}}
+            onTrasitionEnd={() => {
+              updateCaretY();
+              updateCaretX();
+            }}
           >
             {state.tt.map((word, i) => {
               return (
@@ -285,40 +272,10 @@ const StyledCounter = styled.div`
 `;
 
 const MainActivityWrapper = styled.div`
-  width: 10%;
+  width: 60%;
   max-width: 1300px;
   margin: auto;
 `;
-
-const StyledWrapper = styled.div`
-  min-height: 600px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  @keyframes disappear {
-    0% {
-      opacity: 1;
-    }
-
-    50% {
-      opacity: 0;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-`;
-
-type Props = PropsWithChildren;
-const TestWrapper_ = forwardRef<HTMLDivElement, Props>(({ children }, ref) => {
-  return (
-    <div ref={ref} style={{ position: "relative", maxWidth: "58rem" }}>
-      {children}
-    </div>
-  );
-});
 
 const TestWrapper = styled.div`
   display: flex;
@@ -339,8 +296,8 @@ const WordsWrapper = styled.div<{ top: number }>`
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-  transition: top 100ms ease;
   position: absolute;
+  transition: top 100ms ease;
   left: 0;
   top: -${({ top }) => top}px;
   cursor: default;
