@@ -7,17 +7,19 @@ type CaretProps = {
   caretLeft: number;
   caretTop: number;
   inactive: boolean;
+  rerender: number
 };
 
 const Caret = forwardRef<HTMLDivElement, CaretProps>(function Caret(
-  { caretTop, caretLeft, inactive },
+  { caretTop, caretLeft, inactive, rerender },
   ref,
 ) {
   return (
     <StyledCaret
       as={motion.div}
+      key={rerender}
       ref={ref}
-      animate={{ x: caretLeft, y: caretTop }}
+      animate={{ x: caretLeft, y: caretTop, }}
       transition={{ ease: "linear", duration: 0.1 }}
     >
       <CaretImg src={CaretUrl} height={28} width={6} inactive={inactive} />
@@ -42,16 +44,26 @@ const CaretImg = styled.img<{ inactive: boolean }>`
     100% {
       opacity: 1;
     }
-  o
 `;
 
 const StyledCaret = styled.div`
   height: 2rem;
-  width: 0.5rem;
+  width: 0.3rem;
   background-repeat: no-repeat;
   background-size: contain;
   position: absolute;
   z-index: 1;
   top: 0;
   left: 0;
+  animation: reveal 500ms ease-out;
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
 `;

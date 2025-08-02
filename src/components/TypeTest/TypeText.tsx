@@ -6,6 +6,7 @@ import {
   PropsWithChildren,
   memo,
   useCallback,
+  useLayoutEffect,
 } from "react";
 import Caret from "./Caret";
 import TypeWord from "./TypeWord";
@@ -32,6 +33,7 @@ export default function TypeText() {
   const restartButtonRef = useRef<HTMLButtonElement>(null);
   const wordsWrapperRef = useRef<HTMLDivElement>(null);
   const [restartButtonFocus, setRestartButtonFocus] = useState(false);
+  const [rerender, setRerender] = useState(0);
 
   const [tc, setTc] = useSavedState<TestConfigT>(
     "testConfig",
@@ -60,10 +62,11 @@ export default function TypeText() {
       wordsWrapperRef,
     });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const height = wordScrollRef.current?.getBoundingClientRect().height;
     const firstWord = wordsWrapperRef.current?.children[0];
     const curWord = wordsWrapperRef.current?.children[state.cwp];
+
     if (!firstWord) return;
     if (!curWord) return;
     if (!height) return;
@@ -92,11 +95,11 @@ export default function TypeText() {
     }
   }, [state.cwp]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateCaretX();
-  }, [state.clp]);
+  }, [state.clp, state.cwp]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!restartButtonRef.current) return;
 
     restartButtonFocus
@@ -144,6 +147,7 @@ export default function TypeText() {
   const handleRestartTest = useCallback(() => {
     if (!wordsWrapperRef.current) return;
     setWordsTop(0);
+    setRerender((prev) => prev + 1);
     dispatch({ type: ACTIONS.RESTART_TEST });
     setRestartButtonFocus(false);
     resetTimer();
@@ -180,7 +184,7 @@ export default function TypeText() {
           mode={state.tc.mode}
         />
 
-        <WordsWrapperScroll ref={wordScrollRef}>
+        <WordsWrapperScroll ref={wordScrollRef} key={rerender}>
           <Words
             ref={wordsWrapperRef}
             cwp={state.cwp}
@@ -202,6 +206,12 @@ export default function TypeText() {
             })}
           </Words>
         </WordsWrapperScroll>
+        <Caret
+          caretLeft={caretLeft}
+          caretTop={caretTop}
+          inactive={inactive}
+          rerender={rerender}
+        />
       </MainActivityWrapper>
 
       <RestartButton
@@ -209,8 +219,6 @@ export default function TypeText() {
         handleRestartTest={handleRestartTest}
         setRestartButtonFocus={setRestartButtonFocus}
       />
-
-      <Caret caretLeft={caretLeft} caretTop={caretTop} inactive={inactive} />
     </TestWrapper>
   );
 }
@@ -290,6 +298,17 @@ const WordsWrapperScroll = styled.div`
   position: relative;
   pointer-events: none;
   overflow: hidden;
+  animation: reveal 500ms ease-out;
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
 `;
 
 const WordsWrapper = styled.div<{ top: number }>`

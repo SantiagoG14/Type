@@ -2,7 +2,6 @@ import {
   useState,
   MutableRefObject,
   useEffect,
-  useCallback,
 } from "react";
 
 export type UserCaretProps = {
@@ -57,7 +56,7 @@ export function useCaret({
     window.addEventListener("resize", updateCaret);
 
     return () => window.removeEventListener("resize", updateCaret);
-  });
+  }, []);
 
   useEffect(() => {
     setInactive(false);
